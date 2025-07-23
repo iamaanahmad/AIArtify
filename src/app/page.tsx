@@ -244,7 +244,7 @@ export default function GeneratePage() {
           <CardHeader>
             <CardTitle>2. Your Artwork</CardTitle>
             <CardDescription>
-              Mint your masterpiece as an NFT on the Sepolia testnet.
+              Mint your masterpiece as an NFT on the Hyperion testnet.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
