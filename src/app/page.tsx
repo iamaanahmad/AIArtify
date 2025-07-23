@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, Wand2 } from "lucide-react";
 import Image from "next/image";
 
@@ -12,13 +13,63 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+// A simple check if the code is running in a browser environment
+const isBrowser = typeof window !== "undefined";
+
 export default function GeneratePage() {
   const [prompt, setPrompt] = useState<string>("");
   const [refinedResult, setRefinedResult] = useState<AlithPromptHelperOutput | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isRefining, setIsRefining] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isMinting, setIsMinting] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if a wallet is already connected when the component mounts
+    const checkIfWalletIsConnected = async () => {
+      if (isBrowser && window.ethereum) {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+          }
+        } catch (error) {
+          console.error("Error checking for connected wallet:", error);
+        }
+      }
+    };
+    checkIfWalletIsConnected();
+  }, []);
+
+  const connectWallet = async () => {
+    if (!isBrowser || !window.ethereum) {
+        toast({
+            variant: "destructive",
+            title: "MetaMask not found",
+            description: "Please install the MetaMask extension to connect your wallet.",
+        });
+        return;
+    }
+    try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setWalletAddress(accounts[0]);
+        toast({
+            title: "Wallet Connected",
+            description: "Your wallet has been successfully connected.",
+        });
+    } catch (error) {
+        console.error("Error connecting to wallet:", error);
+        toast({
+            variant: "destructive",
+            title: "Wallet connection failed",
+            description: "Could not connect to your wallet. Please try again.",
+        });
+    }
+  }
+
 
   const handleRefinePrompt = async () => {
     if (!prompt) {
@@ -63,25 +114,37 @@ export default function GeneratePage() {
     const randomImageId = Math.floor(Math.random() * 1000);
     setImageUrl(`https://placehold.co/1024x1024.png?id=${randomImageId}`);
     setIsGenerating(false);
-    toast({
-        title: "Artwork Generated!",
-        description: "Your masterpiece is ready.",
-    });
   };
 
-  const handleMintNFT = () => {
+  const handleMintNFT = async () => {
+    if (!walletAddress) {
+        toast({
+            variant: "destructive",
+            title: "Wallet not connected",
+            description: "Please connect your wallet before minting.",
+        });
+        return;
+    }
+    setIsMinting(true);
     toast({
         title: "Minting in Progress",
-        description: "Your NFT is being minted on the Hyperion testnet. This may take a moment.",
+        description: "Please approve the transaction in your wallet. Your NFT is being minted on the Hyperion testnet.",
     });
-    // Simulate minting process
-    setTimeout(() => {
-        toast({
-            title: "🎉 NFT Minted Successfully!",
-            description: "Your artwork is now a permanent part of the blockchain.",
-        });
-    }, 3000);
+
+    // TODO: Replace with actual smart contract minting logic
+    // For now, we'll just simulate the delay
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    toast({
+        title: "🎉 NFT Minted Successfully!",
+        description: "Your artwork is now a permanent part of the blockchain.",
+    });
+    setIsMinting(false);
   }
+
+  const isCtaDisabled = isRefining || isGenerating || isMinting;
+  const isGenerateDisabled = isCtaDisabled || !prompt;
+  const isMintDisabled = isCtaDisabled || !imageUrl;
 
   return (
     <div className="container mx-auto max-w-3xl py-8">
@@ -110,11 +173,11 @@ export default function GeneratePage() {
               onChange={(e) => setPrompt(e.target.value)}
             />
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button onClick={handleRefinePrompt} disabled={isRefining || isGenerating} className="w-full">
+              <Button onClick={handleRefinePrompt} disabled={isCtaDisabled} className="w-full">
                 <Sparkles className="mr-2" />
                 {isRefining ? "Refining with Alith..." : "Refine with Alith"}
               </Button>
-              <Button onClick={handleGenerateArt} disabled={isGenerating || isRefining} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button onClick={handleGenerateArt} disabled={isGenerateDisabled} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
                 <Wand2 className="mr-2" />
                 {isGenerating ? "Generating Art..." : "Generate Art"}
               </Button>
@@ -138,7 +201,7 @@ export default function GeneratePage() {
           <CardHeader>
             <CardTitle>2. Your Artwork</CardTitle>
             <CardDescription>
-              Here is your generated masterpiece. You can now mint it as an NFT.
+              Connect your wallet, then mint your masterpiece as an NFT on the Hyperion testnet.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
@@ -162,14 +225,29 @@ export default function GeneratePage() {
                 </div>
               )}
             </div>
-            {imageUrl && !isGenerating && (
-                <Button size="lg" onClick={handleMintNFT}>
-                    Mint as NFT
+            {imageUrl && !walletAddress && (
+                <Button size="lg" onClick={connectWallet} disabled={isCtaDisabled}>
+                    Connect Wallet to Mint
                 </Button>
+            )}
+            {imageUrl && walletAddress && (
+                <div className="flex flex-col items-center gap-4">
+                     <p className="text-sm text-muted-foreground">Connected: {`${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`}</p>
+                    <Button size="lg" onClick={handleMintNFT} disabled={isMintDisabled}>
+                        {isMinting ? "Minting in Progress..." : "Mint as NFT"}
+                    </Button>
+                </div>
             )}
           </CardContent>
         </Card>
       </div>
     </div>
   );
+}
+
+// Add a declaration for the ethereum object
+declare global {
+    interface Window {
+        ethereum?: any;
+    }
 }
