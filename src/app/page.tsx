@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Sparkles, Wand2 } from "lucide-react";
 import Image from "next/image";
 import { ethers } from "ethers";
@@ -15,9 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { contractConfig } from "@/lib/web3/config";
-
-// A simple check if the code is running in a browser environment
-const isBrowser = typeof window !== "undefined";
+import { useWallet } from "@/hooks/use-wallet";
 
 export default function GeneratePage() {
   const [prompt, setPrompt] = useState<string>("");
@@ -26,53 +24,9 @@ export default function GeneratePage() {
   const [isRefining, setIsRefining] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const { walletAddress, connectWallet, isBrowser } = useWallet();
 
   const { toast } = useToast();
-
-  useEffect(() => {
-    // Check if a wallet is already connected when the component mounts
-    const checkIfWalletIsConnected = async () => {
-      if (isBrowser && window.ethereum) {
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts.length > 0) {
-            setWalletAddress(accounts[0]);
-          }
-        } catch (error) {
-          console.error("Error checking for connected wallet:", error);
-        }
-      }
-    };
-    checkIfWalletIsConnected();
-  }, []);
-
-  const connectWallet = async () => {
-    if (!isBrowser || !window.ethereum) {
-        toast({
-            variant: "destructive",
-            title: "MetaMask not found",
-            description: "Please install the MetaMask extension to connect your wallet.",
-        });
-        return;
-    }
-    try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        setWalletAddress(accounts[0]);
-        toast({
-            title: "Wallet Connected",
-            description: "Your wallet has been successfully connected.",
-        });
-    } catch (error) {
-        console.error("Error connecting to wallet:", error);
-        toast({
-            variant: "destructive",
-            title: "Wallet connection failed",
-            description: "Could not connect to your wallet. Please try again.",
-        });
-    }
-  }
-
 
   const handleRefinePrompt = async () => {
     if (!prompt) {
@@ -151,11 +105,10 @@ export default function GeneratePage() {
     try {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
-        const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, provider);
+        const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
         
-        // Connect the signer to the contract instance. All calls will now be made from this account.
-        const contractWithSigner = contract.connect(signer);
-
+        // The signer is now directly connected to the contract instance
+        
         toast({
             title: "Minting in Progress",
             description: "Please approve the transaction in your wallet.",
@@ -171,8 +124,8 @@ export default function GeneratePage() {
         };
         const tokenURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadata)).toString('base64')}`;
         
-        // Call the mintNFT function on the contract with the signer
-        const transaction = await contractWithSigner.mintNFT(walletAddress, tokenURI);
+        // Call the mintNFT function on the contract
+        const transaction = await contract.mintNFT(walletAddress, tokenURI);
         
         toast({
             title: "Transaction Sent",
@@ -303,11 +256,4 @@ export default function GeneratePage() {
       </div>
     </div>
   );
-}
-
-// Add a declaration for the ethereum object
-declare global {
-    interface Window {
-        ethereum?: any;
-    }
 }

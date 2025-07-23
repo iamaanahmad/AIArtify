@@ -1,6 +1,6 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,82 +13,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "./ui/button";
 import { Gem, LifeBuoy, LogOut, User, Wallet } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-// A simple check if the code is running in a browser environment
-const isBrowser = typeof window !== "undefined";
+import { useWallet } from "@/hooks/use-wallet";
 
 export default function UserNav() {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const checkConnection = async () => {
-      if (isBrowser && window.ethereum) {
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts.length > 0) {
-            setWalletAddress(accounts[0]);
-          }
-        } catch (error) {
-          console.error("Error checking for wallet connection:", error);
-        }
-
-        window.ethereum.on('accountsChanged', (accounts: string[]) => {
-            if (accounts.length > 0) {
-                setWalletAddress(accounts[0]);
-                toast({
-                    title: "Account Switched",
-                    description: `Connected to ${accounts[0].substring(0, 6)}...${accounts[0].substring(accounts[0].length - 4)}`,
-                });
-            } else {
-                setWalletAddress(null);
-                toast({
-                    title: "Wallet Disconnected",
-                    description: "Your wallet has been disconnected.",
-                });
-            }
-        });
-      }
-    };
-    checkConnection();
-  }, [toast]);
-
-  const connectWallet = async () => {
-    if (!isBrowser || !window.ethereum) {
-      toast({
-        variant: "destructive",
-        title: "MetaMask not found",
-        description: "Please install the MetaMask extension to connect your wallet.",
-      });
-      return;
-    }
-    try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      setWalletAddress(accounts[0]);
-      toast({
-        title: "Wallet Connected",
-        description: "Your wallet has been successfully connected.",
-      });
-    } catch (error) {
-      console.error("Error connecting wallet:", error);
-      toast({
-        variant: "destructive",
-        title: "Wallet Connection Failed",
-        description: "Could not connect to your wallet. Please try again.",
-      });
-    }
-  };
-
-    const disconnectWallet = () => {
-        setWalletAddress(null);
-        toast({
-            title: "Wallet Disconnected",
-            description: "You have successfully disconnected your wallet.",
-        });
-        // Note: This does not fully disconnect from Metamask, just from the app's state.
-        // A full disconnect is not possible via a dApp for security reasons.
-    }
+  const { walletAddress, connectWallet, disconnectWallet } = useWallet();
 
   if (!walletAddress) {
     return (
