@@ -160,7 +160,7 @@ export default function GeneratePage() {
 
         // Create metadata for the NFT
         const metadata = {
-            name: "AI Artify NFT",
+            name: "ArtChain AI NFT",
             description: `An AI-generated artwork based on the prompt: "${prompt}"`,
             image: imageUrl,
             prompt: prompt,
@@ -225,7 +225,7 @@ export default function GeneratePage() {
               onChange={(e) => setPrompt(e.target.value)}
             />
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button onClick={handleRefinePrompt} disabled={isCtaDisabled} className="w-full">
+              <Button onClick={handleRefinePrompt} disabled={isCtaDisabled}>
                 <Sparkles className="mr-2" />
                 {isRefining ? "Refining with Alith..." : "Refine with Alith"}
               </Button>
