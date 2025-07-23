@@ -1,5 +1,4 @@
 import Image from "next/image";
-import type { SVGProps } from "react";
 
 export const Icons = {
   logo: (props: { className?: string }) => (
