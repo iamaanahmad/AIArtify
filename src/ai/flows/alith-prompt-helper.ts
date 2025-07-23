@@ -18,6 +18,7 @@ const AlithPromptHelperInputSchema = z.object({
 export type AlithPromptHelperInput = z.infer<typeof AlithPromptHelperInputSchema>;
 
 const AlithPromptHelperOutputSchema = z.object({
+  title: z.string().describe('A short, creative title for the artwork based on the refined prompt.'),
   refinedPrompt: z.string().describe('The refined text prompt suggested by Alith.'),
   reasoning: z.string().optional().describe('Alith reasoning for why the prompt was changed, can be omitted.'),
 });
@@ -35,7 +36,7 @@ const alithPrompt = ai.definePrompt({
 
 Original Prompt: {{{prompt}}}
 
-Based on the original prompt, suggest a refined prompt that would generate a more creative and higher quality AI art.  Explain why you are suggesting the changes. Return only the refined prompt and your explanation. If the prompt is already perfect, simply return it as is.`, config: {
+Based on the original prompt, suggest a refined prompt that would generate a more creative and higher quality AI art. Also, create a short, creative title for the artwork. Explain why you are suggesting the changes. Return only the title, the refined prompt, and your explanation. If the prompt is already perfect, simply return it as is along with a fitting title.`, config: {
     safetySettings: [
       {
         category: 'HARM_CATEGORY_HATE_SPEECH',

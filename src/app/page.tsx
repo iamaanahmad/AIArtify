@@ -103,9 +103,9 @@ export default function GeneratePage() {
     setIsMinting(true);
     
     try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
         
         toast({
             title: "Minting in Progress",
@@ -116,15 +116,26 @@ export default function GeneratePage() {
         // We use a placeholder for the image URL to keep the metadata small.
         // Storing full image data on-chain is prohibitively expensive.
         const metadata = {
-            name: "ArtChain AI NFT",
-            description: `An AI-generated artwork based on the prompt: "${prompt}"`,
-            image: "https://placehold.co/600x600.png", // Use a placeholder or IPFS link
-            prompt: prompt,
-            alith_suggestion: refinedResult?.reasoning || "N/A"
+            name: refinedResult?.title || "ArtChain AI NFT",
+            description: `An AI-generated artwork. Original prompt: "${prompt}"`,
+            image: "https://placehold.co/600x600.png",
+            attributes: [
+              {
+                trait_type: "Original Prompt",
+                value: prompt,
+              },
+              {
+                trait_type: "Refined Prompt",
+                value: refinedResult?.refinedPrompt || prompt,
+              },
+              {
+                trait_type: "Alith's Reasoning",
+                value: refinedResult?.reasoning || "N/A",
+              }
+            ]
         };
         const tokenURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadata)).toString('base64')}`;
         
-        // Call the mintNFT function on the contract
         const transaction = await contract.mintNFT(walletAddress, tokenURI);
         
         toast({
@@ -199,7 +210,7 @@ export default function GeneratePage() {
         {refinedResult?.reasoning && (
           <Alert>
              <Sparkles className="h-4 w-4" />
-            <AlertTitle>Alith's Suggestion</AlertTitle>
+            <AlertTitle>{refinedResult.title || "Alith's Suggestion"}</AlertTitle>
             <AlertDescription>
                 {refinedResult.reasoning}
             </AlertDescription>
