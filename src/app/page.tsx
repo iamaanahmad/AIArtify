@@ -112,13 +112,11 @@ export default function GeneratePage() {
             description: "Please approve the transaction in your wallet.",
         });
 
-        // Create metadata for the NFT.
-        // We use a placeholder for the image URL to keep the metadata small.
-        // Storing full image data on-chain is prohibitively expensive.
+        // Use a placeholder for the image URL to keep the metadata small.
         const metadata = {
             name: refinedResult?.title || "ArtChain AI NFT",
             description: `An AI-generated artwork. Original prompt: "${prompt}"`,
-            image: "https://placehold.co/600x600.png",
+            image: "https://artchain-ai.web.app/placeholder.png", // Using a placeholder
             attributes: [
               {
                 trait_type: "Original Prompt",
@@ -136,7 +134,8 @@ export default function GeneratePage() {
         };
         const tokenURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadata)).toString('base64')}`;
         
-        const transaction = await contract.mintNFT(walletAddress, tokenURI);
+        const contractWithSigner = contract.connect(signer);
+        const transaction = await contractWithSigner.mintNFT(walletAddress, tokenURI);
         
         toast({
             title: "Transaction Sent",
@@ -167,10 +166,10 @@ export default function GeneratePage() {
   const isMintDisabled = isCtaDisabled || !imageUrl;
 
   return (
-    <div className="container mx-auto max-w-3xl py-8">
+    <div className="container mx-auto max-w-3xl py-4 sm:py-8">
       <div className="space-y-8">
         <div className="text-center">
-          <h1 className="font-headline text-4xl font-bold tracking-tight lg:text-5xl">
+          <h1 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
             Create with AI
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
@@ -197,7 +196,7 @@ export default function GeneratePage() {
                 <Sparkles className="mr-2" />
                 {isRefining ? "Refining with Alith..." : "Refine with Alith"}
               </Button>
-              <Button onClick={handleGenerateArt} disabled={isGenerateDisabled} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button onClick={handleGenerateArt} disabled={isGenerateDisabled} className="w-full sm:w-auto flex-1 bg-accent text-accent-foreground hover:bg-accent/90">
                 <Wand2 className="mr-2" />
                 {isGenerating ? "Generating Art..." : "Generate Art"}
               </Button>
@@ -242,7 +241,7 @@ export default function GeneratePage() {
                   data-ai-hint="futuristic abstract"
                 />
               ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center text-center text-muted-foreground">
+                <div className="flex h-full w-full flex-col items-center justify-center p-4 text-center text-muted-foreground">
                     <Wand2 className="mb-4 size-16" />
                     <p className="text-lg font-medium">Your art will appear here</p>
                     <p className="text-sm">Start by entering a prompt and clicking "Generate Art".</p>

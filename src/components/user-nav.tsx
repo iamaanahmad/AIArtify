@@ -21,8 +21,8 @@ export default function UserNav() {
   if (!walletAddress) {
     return (
       <Button onClick={connectWallet}>
-        <Wallet className="mr-2 h-4 w-4" />
-        Connect Wallet
+        <Wallet className="mr-0 sm:mr-2 h-4 w-4" />
+        <span className="hidden sm:inline">Connect Wallet</span>
       </Button>
     );
   }
