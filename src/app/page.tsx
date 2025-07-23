@@ -112,11 +112,10 @@ export default function GeneratePage() {
             description: "Please approve the transaction in your wallet.",
         });
 
-        // Use a placeholder for the image URL to keep the metadata small.
         const metadata = {
-            name: refinedResult?.title || "ArtChain AI NFT",
+            name: refinedResult?.title || "AIArtify NFT",
             description: `An AI-generated artwork. Original prompt: "${prompt}"`,
-            image: "https://artchain-ai.web.app/placeholder.png", // Using a placeholder
+            image: "https://artchain-ai.web.app/placeholder.png",
             attributes: [
               {
                 trait_type: "Original Prompt",

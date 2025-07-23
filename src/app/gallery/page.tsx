@@ -78,7 +78,7 @@ export default function GalleryPage() {
           Public Gallery
         </h1>
         <p className="mt-2 text-lg text-muted-foreground">
-          Explore the incredible creations from the ArtChain AI community.
+          Explore the incredible creations from the AIArtify community.
         </p>
       </div>
 

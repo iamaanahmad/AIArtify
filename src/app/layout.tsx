@@ -10,7 +10,7 @@ import { Icons } from '@/components/icons';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'ArtChain AI',
+  title: 'AIArtify',
   description: 'Generate and mint AI art as NFTs.',
 };
 
@@ -33,7 +33,7 @@ export default function RootLayout({
             <SidebarHeader>
               <Link href="/" className="flex items-center gap-2">
                 <Icons.logo className="size-8" />
-                <h1 className="font-headline text-xl font-bold">ArtChain AI</h1>
+                <h1 className="font-headline text-xl font-bold">AIArtify</h1>
               </Link>
             </SidebarHeader>
             <SidebarContent>

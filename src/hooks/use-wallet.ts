@@ -12,7 +12,7 @@ declare global {
 }
 
 const isBrowser = typeof window !== "undefined";
-const DISCONNECTED_FLAG = "artchain_ai_disconnected";
+const DISCONNECTED_FLAG = "aiartify_disconnected";
 
 export function useWallet() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);

@@ -1,7 +1,6 @@
+# 🎨 AIArtify
 
-# 🎨 ArtChain AI
-
-**ArtChain AI** is a revolutionary dApp that empowers users to become digital artists by transforming their text prompts into unique, mintable NFTs on the blockchain. Leveraging the power of cutting-edge generative AI, this platform provides a seamless and intuitive experience for creating, refining, and owning verifiably unique digital art.
+**AIArtify** is a revolutionary dApp that empowers users to become digital artists by transforming their text prompts into unique, mintable NFTs on the blockchain. Leveraging the power of cutting-edge generative AI, this platform provides a seamless and intuitive experience for creating, refining, and owning verifiably unique digital art.
 
 This project was built for a hackathon, showcasing a full-featured, modern Web3 application.
 
@@ -9,7 +8,7 @@ This project was built for a hackathon, showcasing a full-featured, modern Web3 
 
 ---
 
-![ArtChain AI Screenshot](https://i.ibb.co/TByzgxrn/image.png)
+![AIArtify Screenshot](https://i.ibb.co/TByzgxrn/image.png)
 
 ## ✨ Key Features
 

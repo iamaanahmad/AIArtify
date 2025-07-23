@@ -32,7 +32,7 @@ export default function LeaderboardPage() {
           Leaderboard
         </h1>
         <p className="mt-2 text-lg text-muted-foreground">
-          See who's leading the creative charge in the ArtChain AI community.
+          See who's leading the creative charge in the AIArtify community.
         </p>
       </div>
 
