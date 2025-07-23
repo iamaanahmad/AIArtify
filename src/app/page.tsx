@@ -151,8 +151,11 @@ export default function GeneratePage() {
     try {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
-        const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
+        const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, provider);
         
+        // Connect the signer to the contract instance. All calls will now be made from this account.
+        const contractWithSigner = contract.connect(signer);
+
         toast({
             title: "Minting in Progress",
             description: "Please approve the transaction in your wallet.",
@@ -168,7 +171,8 @@ export default function GeneratePage() {
         };
         const tokenURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadata)).toString('base64')}`;
         
-        const transaction = await contract.mintNFT(walletAddress, tokenURI);
+        // Call the mintNFT function on the contract with the signer
+        const transaction = await contractWithSigner.mintNFT(walletAddress, tokenURI);
         
         toast({
             title: "Transaction Sent",
