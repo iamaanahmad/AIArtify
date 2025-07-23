@@ -7,6 +7,7 @@ import Image from "next/image";
 import { ethers } from "ethers";
 
 import { alithPromptHelper, type AlithPromptHelperOutput } from "@/ai/flows/alith-prompt-helper";
+import { generateArt } from "@/ai/flows/generate-art-flow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -111,11 +112,19 @@ export default function GeneratePage() {
     }
     setIsGenerating(true);
     setImageUrl(null);
-    // Simulate API call for image generation
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    const randomImageId = Math.floor(Math.random() * 1000);
-    setImageUrl(`https://placehold.co/1024x1024.png?id=${randomImageId}`);
-    setIsGenerating(false);
+    try {
+      const result = await generateArt({ prompt });
+      setImageUrl(result.imageUrl);
+    } catch (error) {
+      console.error("Error generating art:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to generate art",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleMintNFT = async () => {
@@ -250,7 +259,11 @@ export default function GeneratePage() {
           <CardContent className="flex flex-col items-center gap-4">
             <div className="aspect-square w-full max-w-md rounded-lg border-2 border-dashed bg-card-foreground/5">
               {isGenerating ? (
-                <Skeleton className="h-full w-full" />
+                <div className="flex h-full w-full flex-col items-center justify-center text-center text-muted-foreground">
+                  <Wand2 className="mb-4 size-16 animate-pulse" />
+                  <p className="text-lg font-medium">Generating your art...</p>
+                  <p className="text-sm">This may take a moment.</p>
+                </div>
               ) : imageUrl ? (
                 <Image
                   src={imageUrl}
