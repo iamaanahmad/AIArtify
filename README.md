@@ -5,12 +5,11 @@
 
 This project was built for a hackathon, showcasing a full-featured, modern Web3 application.
 
-**[➡️ LIVE DEMO (Link to your Vercel deployment)](#)**
+**[➡️ LIVE DEMO](https://art-chain-ai-gamma.vercel.app/)**
 
 ---
 
-![ArtChain AI Screenshot](https://placehold.co/1200x600.png?text=ArtChain+AI+App+Screenshot)
-*(Add a screenshot of the application here)*
+![ArtChain AI Screenshot](https://i.ibb.co/TByzgxrn/image.png)
 
 ## ✨ Key Features
 
@@ -50,8 +49,8 @@ To run this project on your local machine, follow these steps:
 
 **1. Clone the repository:**
 ```bash
-git clone https://github.com/your-username/artchain-ai.git
-cd artchain-ai
+git clone https://github.com/iamaanahmad/ArtChain-AI.git
+cd ArtChain-AI
 ```
 
 **2. Install dependencies:**
