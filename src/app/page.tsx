@@ -107,18 +107,18 @@ export default function GeneratePage() {
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
         
-        // The signer is now directly connected to the contract instance
-        
         toast({
             title: "Minting in Progress",
             description: "Please approve the transaction in your wallet.",
         });
 
-        // Create metadata for the NFT
+        // Create metadata for the NFT.
+        // We use a placeholder for the image URL to keep the metadata small.
+        // Storing full image data on-chain is prohibitively expensive.
         const metadata = {
             name: "ArtChain AI NFT",
             description: `An AI-generated artwork based on the prompt: "${prompt}"`,
-            image: imageUrl,
+            image: "https://placehold.co/600x600.png", // Use a placeholder or IPFS link
             prompt: prompt,
             alith_suggestion: refinedResult?.reasoning || "N/A"
         };
