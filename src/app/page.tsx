@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { Sparkles, Wand2 } from "lucide-react";
 import Image from "next/image";
+import { ethers } from "ethers";
 
 import { alithPromptHelper, type AlithPromptHelperOutput } from "@/ai/flows/alith-prompt-helper";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { contractConfig } from "@/lib/web3/config";
 
 // A simple check if the code is running in a browser environment
 const isBrowser = typeof window !== "undefined";
@@ -117,29 +119,70 @@ export default function GeneratePage() {
   };
 
   const handleMintNFT = async () => {
-    if (!walletAddress) {
+    if (!walletAddress || !imageUrl) {
         toast({
             variant: "destructive",
-            title: "Wallet not connected",
-            description: "Please connect your wallet before minting.",
+            title: "Prerequisites not met",
+            description: "Please connect your wallet and generate an image before minting.",
         });
         return;
     }
+
+    if (!isBrowser || !window.ethereum) {
+        toast({
+            variant: "destructive",
+            title: "MetaMask not found",
+            description: "Please ensure MetaMask is installed and active.",
+        });
+        return;
+    }
+
     setIsMinting(true);
-    toast({
-        title: "Minting in Progress",
-        description: "Please approve the transaction in your wallet. Your NFT is being minted on the Hyperion testnet.",
-    });
+    
+    try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
+        
+        toast({
+            title: "Minting in Progress",
+            description: "Please approve the transaction in your wallet.",
+        });
 
-    // TODO: Replace with actual smart contract minting logic
-    // For now, we'll just simulate the delay
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+        // Create metadata for the NFT
+        const metadata = {
+            name: "AI Artify NFT",
+            description: `An AI-generated artwork based on the prompt: "${prompt}"`,
+            image: imageUrl,
+            prompt: prompt,
+            alith_suggestion: refinedResult?.reasoning || "N/A"
+        };
+        const tokenURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadata)).toString('base64')}`;
+        
+        const transaction = await contract.mintNFT(walletAddress, tokenURI);
+        
+        toast({
+            title: "Transaction Sent",
+            description: "Waiting for confirmation from the blockchain...",
+        });
 
-    toast({
-        title: "🎉 NFT Minted Successfully!",
-        description: "Your artwork is now a permanent part of the blockchain.",
-    });
-    setIsMinting(false);
+        await transaction.wait();
+
+        toast({
+            title: "🎉 NFT Minted Successfully!",
+            description: "Your artwork is now a permanent part of the blockchain.",
+        });
+
+    } catch (error: any) {
+        console.error("Error minting NFT:", error);
+        toast({
+            variant: "destructive",
+            title: "Minting Failed",
+            description: error.reason || "An unexpected error occurred during minting.",
+        });
+    } finally {
+        setIsMinting(false);
+    }
   }
 
   const isCtaDisabled = isRefining || isGenerating || isMinting;
@@ -201,7 +244,7 @@ export default function GeneratePage() {
           <CardHeader>
             <CardTitle>2. Your Artwork</CardTitle>
             <CardDescription>
-              Connect your wallet, then mint your masterpiece as an NFT on the Hyperion testnet.
+              Mint your masterpiece as an NFT on the Sepolia testnet.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
