@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Sparkles, Wand2 } from "lucide-react";
+import { Copy, Sparkles, Wand2, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import { ethers } from "ethers";
 import axios from "axios";
@@ -21,15 +21,26 @@ import Link from "next/link";
 import { ToastAction } from "@/components/ui/toast";
 
 export default function GeneratePage() {
-  const [prompt, setPrompt] = useState<string>("A stoic robot meditating in a cherry blossom garden, detailed, 4k");
+  const [prompt, setPrompt] = useState<string>("A majestic lion with a crown of stars, in a cosmic nebula, hyperrealistic, 4k");
   const [refinedResult, setRefinedResult] = useState<AlithPromptHelperOutput | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isRefining, setIsRefining] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
+  const [mintingStep, setMintingStep] = useState("");
+  const [lastMintTx, setLastMintTx] = useState<string | null>(null);
+
   const { walletAddress, connectWallet, isBrowser } = useWallet();
 
   const { toast } = useToast();
+
+  const handleCreateAnother = () => {
+    setRefinedResult(null);
+    setImageUrl(null);
+    setLastMintTx(null);
+    setMintingStep("");
+    setPrompt("A new masterpiece, a futuristic city floating in the clouds, detailed, 4k");
+  }
 
   const handleRefinePrompt = async () => {
     if (!prompt) {
@@ -69,6 +80,7 @@ export default function GeneratePage() {
     }
     setIsGenerating(true);
     setImageUrl(null);
+    setLastMintTx(null);
     try {
       const result = await generateArt({ prompt });
       setImageUrl(result.imageUrl);
@@ -122,7 +134,6 @@ export default function GeneratePage() {
         }
       );
       if (response.data.metadata && response.data.metadata.id) {
-        // Return the public URL for the bin, not the API endpoint
         return `https://api.jsonbin.io/b/${response.data.metadata.id}`;
       } else {
         throw new Error('Failed to get metadata URL from JSONBin response.');
@@ -153,12 +164,10 @@ export default function GeneratePage() {
     }
 
     setIsMinting(true);
+    setLastMintTx(null);
     
     try {
-        toast({
-            title: "Step 1/3: Preparing Artwork...",
-            description: "Uploading image to permanent storage.",
-        });
+        setMintingStep("Step 1/3: Preparing Artwork...");
         const hostedImageUrl = await uploadImageToImgBB(imageUrl);
 
         const metadata = {
@@ -181,16 +190,10 @@ export default function GeneratePage() {
             ]
         };
         
-        toast({
-            title: "Step 2/3: Uploading Metadata...",
-            description: "Storing NFT details for universal compatibility.",
-        });
+        setMintingStep("Step 2/3: Uploading Metadata...");
         const tokenURI = await uploadMetadataToJSONBin(metadata);
         
-        toast({
-            title: "Step 3/3: Minting NFT...",
-            description: "Please approve the transaction in your wallet.",
-        });
+        setMintingStep("Step 3/3: Minting in your wallet...");
 
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
@@ -198,10 +201,7 @@ export default function GeneratePage() {
         
         const transaction = await contract.mintNFT(walletAddress, tokenURI);
         
-        toast({
-            title: "Transaction Sent",
-            description: "Waiting for confirmation from the blockchain...",
-        });
+        setMintingStep("Waiting for blockchain confirmation...");
 
         const receipt = await transaction.wait();
         
@@ -209,25 +209,22 @@ export default function GeneratePage() {
           throw new Error("Transaction receipt is null");
         }
 
+        setLastMintTx(receipt.hash);
+
         toast({
             title: "🎉 NFT Minted Successfully!",
-            description: (
-              <div className="flex flex-col gap-2">
-                  <p>Your artwork is now a permanent part of the blockchain.</p>
-                  <div className="flex items-center gap-2 text-xs font-mono bg-muted text-muted-foreground p-2 rounded-md">
-                      <span className="truncate">Tx: {receipt.hash}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => handleCopy(receipt.hash)}>
-                          <Copy className="h-4 w-4" />
-                      </Button>
-                  </div>
-              </div>
-            ),
+            description: "Your artwork is now a permanent part of the blockchain.",
             action: (
-              <ToastAction altText="View on Explorer" asChild>
-                <Link href={`https://hyperion-testnet-explorer.metisdevops.link/tx/${receipt.hash}`} target="_blank">
-                  View on Explorer
-                </Link>
-              </ToastAction>
+              <div className="flex w-full flex-col gap-2 sm:flex-row">
+                <Button variant="outline" size="sm" onClick={() => handleCopy(receipt.hash)}>
+                  <Copy className="mr-2" /> Copy Tx
+                </Button>
+                <ToastAction altText="View on Explorer" asChild>
+                  <Link href={`https://hyperion-testnet-explorer.metisdevops.link/tx/${receipt.hash}`} target="_blank">
+                    View on Explorer
+                  </Link>
+                </ToastAction>
+              </div>
             ),
             duration: 10000,
         });
@@ -242,12 +239,12 @@ export default function GeneratePage() {
         });
     } finally {
         setIsMinting(false);
+        setMintingStep("");
     }
   }
 
   const isCtaDisabled = isRefining || isGenerating || isMinting;
   const isGenerateDisabled = isCtaDisabled || !prompt;
-  const isMintDisabled = isCtaDisabled || !imageUrl;
 
   return (
     <div className="container mx-auto max-w-3xl py-4 sm:py-8">
@@ -274,13 +271,14 @@ export default function GeneratePage() {
               className="min-h-[120px] resize-none"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
+              disabled={isCtaDisabled || !!lastMintTx}
             />
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button onClick={handleRefinePrompt} disabled={isCtaDisabled}>
+              <Button onClick={handleRefinePrompt} disabled={isCtaDisabled || !!lastMintTx}>
                 <Sparkles className="mr-2" />
                 {isRefining ? "Refining with Alith..." : "Refine with Alith"}
               </Button>
-              <Button onClick={handleGenerateArt} disabled={isGenerateDisabled} className="w-full sm:w-auto flex-1 bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button onClick={handleGenerateArt} disabled={isGenerateDisabled || !!lastMintTx} className="w-full sm:w-auto flex-1 bg-accent text-accent-foreground hover:bg-accent/90">
                 <Wand2 className="mr-2" />
                 {isGenerating ? "Generating Art..." : "Generate Art"}
               </Button>
@@ -332,19 +330,50 @@ export default function GeneratePage() {
                 </div>
               )}
             </div>
-            {imageUrl && !walletAddress && (
-                <Button size="lg" onClick={connectWallet} disabled={isCtaDisabled}>
-                    Connect Wallet to Mint
-                </Button>
-            )}
-            {imageUrl && walletAddress && (
-                <div className="flex flex-col items-center gap-4">
-                     <p className="text-sm text-muted-foreground">Connected: {`${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`}</p>
-                    <Button size="lg" onClick={handleMintNFT} disabled={isMintDisabled}>
-                        {isMinting ? "Minting in Progress..." : "Mint as NFT"}
-                    </Button>
+
+            <div className="flex w-full max-w-md flex-col items-center gap-4">
+              {!walletAddress && imageUrl && (
+                  <Button size="lg" onClick={connectWallet} disabled={isCtaDisabled}>
+                      Connect Wallet to Mint
+                  </Button>
+              )}
+
+              {walletAddress && imageUrl && !lastMintTx && (
+                  <>
+                      <p className="text-sm text-muted-foreground">Connected: {`${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`}</p>
+                      <Button size="lg" onClick={handleMintNFT} disabled={isMinting}>
+                          {isMinting ? "Minting in Progress..." : "Mint as NFT"}
+                      </Button>
+                      {mintingStep && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span className="relative flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary/80"></span>
+                              </span>
+                              <span>{mintingStep}</span>
+                          </div>
+                      )}
+                  </>
+              )}
+
+              {lastMintTx && (
+                <div className="flex w-full flex-col items-center gap-4 rounded-lg border bg-background p-4 text-center">
+                    <CheckCircle className="size-12 text-green-500" />
+                    <h3 className="text-lg font-semibold">Minted Successfully!</h3>
+                    <p className="text-sm text-muted-foreground">Your artwork is permanently on the blockchain.</p>
+                    <div className="flex w-full flex-col gap-2 sm:flex-row">
+                      <Button asChild variant="outline" className="flex-1">
+                          <Link href={`https://hyperion-testnet-explorer.metisdevops.link/tx/${lastMintTx}`} target="_blank">
+                              View Transaction
+                          </Link>
+                      </Button>
+                      <Button onClick={handleCreateAnother} className="flex-1">
+                          Create Another
+                      </Button>
+                    </div>
                 </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
