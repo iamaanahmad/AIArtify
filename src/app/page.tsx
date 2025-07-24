@@ -143,7 +143,9 @@ export default function GeneratePage() {
         const tokenURI = `data:application/json;base64,${btoa(JSON.stringify(metadata))}`;
         
         const contractWithSigner = contract.connect(signer);
-        const transaction = await contractWithSigner.mintNFT(walletAddress, tokenURI);
+        const transaction = await contractWithSigner.mintNFT(walletAddress, tokenURI, {
+            gasLimit: 5000000, // Setting a manual gas limit to bypass estimation issues
+        });
         
         toast({
             title: "Transaction Sent",
