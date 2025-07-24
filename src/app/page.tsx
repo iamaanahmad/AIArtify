@@ -117,7 +117,7 @@ export default function GeneratePage() {
         const metadata = {
             name: refinedResult?.title || "AIArtify NFT",
             description: `An AI-generated artwork. Original prompt: "${prompt}"`,
-            image: "https://artchain-ai.web.app/placeholder.png",
+            image: imageUrl, // <-- The fix is here! Use the generated data URI.
             attributes: [
               {
                 trait_type: "Original Prompt",
