@@ -116,13 +116,12 @@ export default function GeneratePage() {
         {
           headers: {
             'Content-Type': 'application/json',
-            'X-Master-Key': '$2a$10$v2iytT24s9gJbSj4mB9f..kUWX5rESgTzG1KDSYCIyF2TzTdIZS.W', // A public, anonymous key for jsonbin
+            'X-Master-Key': '$2a$10$nofHrMc45FIv4LV5Icpua.0jO6yKdxcRCfCEucOPKlZh1Msk5PIEK',
             'X-Bin-Name': `AIArtify NFT: ${refinedResult?.title || 'NFT'}`,
-            'X-Collection-Id': '669b04f3e41b4d34e4171a5c' // Public collection for AIArtify
           },
         }
       );
-      if (response.data.metadata) {
+      if (response.data.metadata && response.data.metadata.id) {
         return `https://api.jsonbin.io/v3/b/${response.data.metadata.id}?meta=false`;
       } else {
         throw new Error('Failed to get metadata URL from JSONBin response.');
