@@ -10,7 +10,7 @@ import { Icons } from '@/components/icons';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'AIArtify',
+  title: 'AIArtify | AI-Powered NFTs',
   description: 'Generate and mint AI art as NFTs.',
 };
 

@@ -15,7 +15,7 @@ const leaderboardData = [
   { rank: 8, user: "SkyArchitect", points: 7640, avatar: "https://placehold.co/40x40.png" },
   { rank: 9, user: "CosmoExplorer", points: 6880, avatar: "https://placehold.co/40x40.png" },
   { rank: 10, user: "ArtisanAI", points: 6100, avatar: "https://placehold.co/40x40.png" },
-];
+].sort((a, b) => b.points - a.points);
 
 const rankIcons = [
     { icon: Trophy, color: "text-yellow-400" },
@@ -62,7 +62,7 @@ export default function LeaderboardPage() {
                     <TableCell className="text-center font-bold">
                         <div className="flex items-center justify-center gap-2">
                             <RankIcon className={cn("size-5", iconColor)} />
-                            <span>{entry.rank}</span>
+                            <span>{index + 1}</span>
                         </div>
                     </TableCell>
                     <TableCell>

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Wand2 } from "lucide-react";
+import { Copy, Sparkles, Wand2 } from "lucide-react";
 import Image from "next/image";
 import { ethers } from "ethers";
 
@@ -20,7 +20,7 @@ import Link from "next/link";
 import { ToastAction } from "@/components/ui/toast";
 
 export default function GeneratePage() {
-  const [prompt, setPrompt] = useState<string>("");
+  const [prompt, setPrompt] = useState<string>("A stoic robot meditating in a cherry blossom garden, detailed, 4k");
   const [refinedResult, setRefinedResult] = useState<AlithPromptHelperOutput | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isRefining, setIsRefining] = useState(false);
@@ -82,6 +82,13 @@ export default function GeneratePage() {
       setIsGenerating(false);
     }
   };
+  
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied to clipboard!",
+    });
+  };
 
   const handleMintNFT = async () => {
     if (!walletAddress || !imageUrl) {
@@ -117,7 +124,7 @@ export default function GeneratePage() {
         const metadata = {
             name: refinedResult?.title || "AIArtify NFT",
             description: `An AI-generated artwork. Original prompt: "${prompt}"`,
-            image: imageUrl, // <-- The fix is here! Use the generated data URI.
+            image: imageUrl,
             attributes: [
               {
                 trait_type: "Original Prompt",
@@ -144,10 +151,20 @@ export default function GeneratePage() {
         });
 
         const receipt = await transaction.wait();
-
+        
         toast({
             title: "🎉 NFT Minted Successfully!",
-            description: "Your artwork is now a permanent part of the blockchain.",
+            description: (
+              <div className="flex flex-col gap-2">
+                  <p>Your artwork is now a permanent part of the blockchain.</p>
+                  <div className="flex items-center gap-2 text-xs font-mono bg-muted text-muted-foreground p-2 rounded-md">
+                      <span className="truncate">Tx: {receipt.hash}</span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy(receipt.hash)}>
+                          <Copy className="h-4 w-4" />
+                      </Button>
+                  </div>
+              </div>
+            ),
             action: (
               <ToastAction altText="View on Explorer" asChild>
                 <Link href={`https://hyperion-testnet-explorer.metisdevops.link/tx/${receipt.hash}`} target="_blank">
