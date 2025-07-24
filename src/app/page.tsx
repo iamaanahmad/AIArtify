@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { contractConfig } from "@/lib/web3/config";
 import { useWallet } from "@/hooks/use-wallet";
+import Link from "next/link";
+import { ToastAction } from "@/components/ui/toast";
 
 export default function GeneratePage() {
   const [prompt, setPrompt] = useState<string>("");
@@ -141,11 +143,18 @@ export default function GeneratePage() {
             description: "Waiting for confirmation from the blockchain...",
         });
 
-        await transaction.wait();
+        const receipt = await transaction.wait();
 
         toast({
             title: "🎉 NFT Minted Successfully!",
             description: "Your artwork is now a permanent part of the blockchain.",
+            action: (
+              <ToastAction altText="View on Explorer" asChild>
+                <Link href={`https://hyperion-testnet-explorer.metisdevops.link/tx/${receipt.hash}`} target="_blank">
+                  View on Explorer
+                </Link>
+              </ToastAction>
+            ),
         });
 
     } catch (error: any) {
