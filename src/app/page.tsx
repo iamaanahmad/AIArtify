@@ -140,7 +140,7 @@ export default function GeneratePage() {
               }
             ]
         };
-        const tokenURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadata)).toString('base64')}`;
+        const tokenURI = `data:application/json;base64,${btoa(JSON.stringify(metadata))}`;
         
         const contractWithSigner = contract.connect(signer);
         const transaction = await contractWithSigner.mintNFT(walletAddress, tokenURI);
