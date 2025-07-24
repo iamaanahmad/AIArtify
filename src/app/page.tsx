@@ -91,14 +91,11 @@ export default function GeneratePage() {
     });
   };
 
-  // Helper function to upload image and get a URL
   const uploadImageToImgBB = async (dataUri: string): Promise<string> => {
     const base64Data = dataUri.split(",")[1];
     const formData = new FormData();
     formData.append("image", base64Data);
 
-    // NOTE: This uses a public, rate-limited API key for demonstration.
-    // For a production app, you should use your own key and handle it securely.
     const response = await axios.post(
       "https://api.imgbb.com/1/upload?key=5646315e9455d5ea1fa66362d1b33433",
       formData
@@ -152,7 +149,7 @@ export default function GeneratePage() {
         const metadata = {
             name: refinedResult?.title || "AIArtify NFT",
             description: `An AI-generated artwork. Original prompt: "${prompt}"`,
-            image: hostedImageUrl, // Use the lightweight hosted URL
+            image: hostedImageUrl,
             attributes: [
               {
                 trait_type: "Original Prompt",
