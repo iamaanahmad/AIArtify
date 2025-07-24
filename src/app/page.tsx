@@ -122,7 +122,8 @@ export default function GeneratePage() {
         }
       );
       if (response.data.metadata && response.data.metadata.id) {
-        return `https://api.jsonbin.io/v3/b/${response.data.metadata.id}?meta=false`;
+        // Return the public URL for the bin, not the API endpoint
+        return `https://api.jsonbin.io/b/${response.data.metadata.id}`;
       } else {
         throw new Error('Failed to get metadata URL from JSONBin response.');
       }
