@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Copy, Sparkles, Wand2 } from "lucide-react";
 import Image from "next/image";
 import { ethers } from "ethers";
+import axios from "axios";
 
 import { alithPromptHelper, type AlithPromptHelperOutput } from "@/ai/flows/alith-prompt-helper";
 import { generateArt } from "@/ai/flows/generate-art-flow";
@@ -90,6 +91,26 @@ export default function GeneratePage() {
     });
   };
 
+  // Helper function to upload image and get a URL
+  const uploadImageToImgBB = async (dataUri: string): Promise<string> => {
+    const base64Data = dataUri.split(",")[1];
+    const formData = new FormData();
+    formData.append("image", base64Data);
+
+    // NOTE: This uses a public, rate-limited API key for demonstration.
+    // For a production app, you should use your own key and handle it securely.
+    const response = await axios.post(
+      "https://api.imgbb.com/1/upload?key=c386c39a744214a799516a8a3c4293e1",
+      formData
+    );
+
+    if (response.data.success) {
+      return response.data.data.url;
+    } else {
+      throw new Error("Image upload failed: " + response.data.error.message);
+    }
+  };
+
   const handleMintNFT = async () => {
     if (!walletAddress || !imageUrl) {
         toast({
@@ -112,9 +133,16 @@ export default function GeneratePage() {
     setIsMinting(true);
     
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
+        toast({
+            title: "Preparing Artwork...",
+            description: "Uploading image to decentralized storage.",
+        });
+
+        const hostedImageUrl = await uploadImageToImgBB(imageUrl);
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
         
         toast({
             title: "Minting in Progress",
@@ -124,7 +152,7 @@ export default function GeneratePage() {
         const metadata = {
             name: refinedResult?.title || "AIArtify NFT",
             description: `An AI-generated artwork. Original prompt: "${prompt}"`,
-            image: imageUrl,
+            image: hostedImageUrl, // Use the lightweight hosted URL
             attributes: [
               {
                 trait_type: "Original Prompt",
@@ -142,9 +170,7 @@ export default function GeneratePage() {
         };
         const tokenURI = `data:application/json;base64,${btoa(JSON.stringify(metadata))}`;
         
-        const transaction = await contract.mintNFT(walletAddress, tokenURI, {
-            gasLimit: 5000000,
-        });
+        const transaction = await contract.mintNFT(walletAddress, tokenURI);
         
         toast({
             title: "Transaction Sent",
@@ -177,6 +203,7 @@ export default function GeneratePage() {
                 </Link>
               </ToastAction>
             ),
+            duration: 10000,
         });
 
     } catch (error: any) {
