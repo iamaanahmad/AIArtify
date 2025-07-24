@@ -142,9 +142,8 @@ export default function GeneratePage() {
         };
         const tokenURI = `data:application/json;base64,${btoa(JSON.stringify(metadata))}`;
         
-        const contractWithSigner = contract.connect(signer);
-        const transaction = await contractWithSigner.mintNFT(walletAddress, tokenURI, {
-            gasLimit: 5000000, // Setting a manual gas limit to bypass estimation issues
+        const transaction = await contract.mintNFT(walletAddress, tokenURI, {
+            gasLimit: 5000000,
         });
         
         toast({
@@ -154,6 +153,10 @@ export default function GeneratePage() {
 
         const receipt = await transaction.wait();
         
+        if (!receipt) {
+          throw new Error("Transaction receipt is null");
+        }
+
         toast({
             title: "🎉 NFT Minted Successfully!",
             description: (
@@ -178,10 +181,11 @@ export default function GeneratePage() {
 
     } catch (error: any) {
         console.error("Error minting NFT:", error);
+        const errorMessage = error.reason || error.message || "An unexpected error occurred during minting.";
         toast({
             variant: "destructive",
             title: "Minting Failed",
-            description: error.reason || "An unexpected error occurred during minting.",
+            description: errorMessage.length > 100 ? `${errorMessage.substring(0, 100)}...` : errorMessage,
         });
     } finally {
         setIsMinting(false);
