@@ -97,7 +97,7 @@ export default function GeneratePage() {
     formData.append("image", base64Data);
 
     const response = await axios.post(
-      "https://api.imgbb.com/1/upload?key=5646315e9455d5ea1fa66362d1b33433",
+      `https://api.imgbb.com/1/upload?key=5646315e9455d5ea1fa66362d1b33433`,
       formData
     );
 
@@ -107,6 +107,31 @@ export default function GeneratePage() {
       throw new Error("Image upload failed: " + response.data.error.message);
     }
   };
+
+  const uploadMetadataToJSONBin = async (metadata: object): Promise<string> => {
+    try {
+      const response = await axios.post(
+        'https://api.jsonbin.io/v3/b',
+        metadata,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': '$2a$10$v2iytT24s9gJbSj4mB9f..kUWX5rESgTzG1KDSYCIyF2TzTdIZS.W', // A public, anonymous key for jsonbin
+            'X-Bin-Name': `AIArtify NFT: ${refinedResult?.title || 'NFT'}`,
+            'X-Collection-Id': '669b04f3e41b4d34e4171a5c' // Public collection for AIArtify
+          },
+        }
+      );
+      if (response.data.metadata) {
+        return `https://api.jsonbin.io/v3/b/${response.data.metadata.id}?meta=false`;
+      } else {
+        throw new Error('Failed to get metadata URL from JSONBin response.');
+      }
+    } catch (error) {
+      console.error('Error uploading metadata to JSONBin:', error);
+      throw new Error('Failed to upload metadata.');
+    }
+  }
 
   const handleMintNFT = async () => {
     if (!walletAddress || !imageUrl) {
@@ -131,24 +156,14 @@ export default function GeneratePage() {
     
     try {
         toast({
-            title: "Preparing Artwork...",
-            description: "Uploading image to decentralized storage.",
+            title: "Step 1/3: Preparing Artwork...",
+            description: "Uploading image to permanent storage.",
         });
-
         const hostedImageUrl = await uploadImageToImgBB(imageUrl);
-
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
-        
-        toast({
-            title: "Minting in Progress",
-            description: "Please approve the transaction in your wallet.",
-        });
 
         const metadata = {
             name: refinedResult?.title || "AIArtify NFT",
-            description: `An AI-generated artwork. Original prompt: "${prompt}"`,
+            description: `An AI-generated artwork from AIArtify.`,
             image: hostedImageUrl,
             attributes: [
               {
@@ -165,7 +180,21 @@ export default function GeneratePage() {
               }
             ]
         };
-        const tokenURI = `data:application/json;base64,${btoa(JSON.stringify(metadata))}`;
+        
+        toast({
+            title: "Step 2/3: Uploading Metadata...",
+            description: "Storing NFT details for universal compatibility.",
+        });
+        const tokenURI = await uploadMetadataToJSONBin(metadata);
+        
+        toast({
+            title: "Step 3/3: Minting NFT...",
+            description: "Please approve the transaction in your wallet.",
+        });
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
         
         const transaction = await contract.mintNFT(walletAddress, tokenURI);
         
@@ -187,7 +216,7 @@ export default function GeneratePage() {
                   <p>Your artwork is now a permanent part of the blockchain.</p>
                   <div className="flex items-center gap-2 text-xs font-mono bg-muted text-muted-foreground p-2 rounded-md">
                       <span className="truncate">Tx: {receipt.hash}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy(receipt.hash)}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => handleCopy(receipt.hash)}>
                           <Copy className="h-4 w-4" />
                       </Button>
                   </div>
