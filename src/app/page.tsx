@@ -100,7 +100,7 @@ export default function GeneratePage() {
     // NOTE: This uses a public, rate-limited API key for demonstration.
     // For a production app, you should use your own key and handle it securely.
     const response = await axios.post(
-      "https://api.imgbb.com/1/upload?key=c386c39a744214a799516a8a3c4293e1",
+      "https://api.imgbb.com/1/upload?key=5646315e9455d5ea1fa66362d1b33433",
       formData
     );
 
