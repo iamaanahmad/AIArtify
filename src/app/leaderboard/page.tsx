@@ -1,3 +1,4 @@
+
 import { Award, Gem, Medal, Trophy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +27,7 @@ const rankIcons = [
 
 export default function LeaderboardPage() {
   return (
-    <div className="space-y-8">
+    <div className="flex w-full flex-col space-y-8">
       <div>
         <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">
           Leaderboard
