@@ -27,8 +27,8 @@ const rankIcons = [
 
 export default function LeaderboardPage() {
   return (
-    <div className="flex w-full flex-col space-y-8">
-      <div>
+    <div className="w-full space-y-8">
+      <div className="px-4 sm:px-6">
         <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">
           Leaderboard
         </h1>
@@ -37,7 +37,7 @@ export default function LeaderboardPage() {
         </p>
       </div>
 
-      <Card>
+      <Card className="sm:rounded-none">
         <CardHeader>
           <CardTitle>Top Creators</CardTitle>
           <CardDescription>
