@@ -104,45 +104,29 @@ export default function GeneratePage() {
   };
 
   const uploadImageToImgBB = async (dataUri: string): Promise<string> => {
+    // We expect the data URI to be 'data:image/png;base64,....'
+    // The API needs just the base64 part.
     const base64Data = dataUri.split(",")[1];
     const formData = new FormData();
     formData.append("image", base64Data);
 
     const response = await axios.post(
       `https://api.imgbb.com/1/upload?key=5646315e9455d5ea1fa66362d1b33433`,
-      formData
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
 
     if (response.data.success) {
-      return response.data.data.url;
+      // Use the https URL for better compatibility and to avoid mixed content issues.
+      return response.data.data.url.replace(/^http:/, 'https:');
     } else {
       throw new Error("Image upload failed: " + response.data.error.message);
     }
   };
-
-  const uploadMetadataToJSONBin = async (metadata: object): Promise<string> => {
-    try {
-      const response = await axios.post(
-        'https://api.jsonbin.io/v3/b',
-        metadata,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Master-Key': '$2a$10$nofHrMc45FIv4LV5Icpua.0jO6yKdxcRCfCEucOPKlZh1Msk5PIEK',
-            'X-Bin-Name': `AIArtify NFT: ${refinedResult?.title || 'NFT'}`,
-          },
-        }
-      );
-      if (response.data.metadata && response.data.metadata.id) {
-        return `https://api.jsonbin.io/b/${response.data.metadata.id}`;
-      } else {
-        throw new Error('Failed to get metadata URL from JSONBin response.');
-      }
-    } catch (error) {
-      console.error('Error uploading metadata to JSONBin:', error);
-      throw new Error('Failed to upload metadata.');
-    }
-  }
 
   const handleMintNFT = async () => {
     if (!walletAddress || !imageUrl) {
@@ -168,16 +152,18 @@ export default function GeneratePage() {
     
     try {
         setMintingStep("Step 1/3: Preparing Artwork...");
+        // The image is already a data URI from the AI. We need to upload it to get a stable URL.
         const hostedImageUrl = await uploadImageToImgBB(imageUrl);
 
+        setMintingStep("Step 2/3: Creating On-Chain Metadata...");
         const metadata = {
             name: refinedResult?.title || "AIArtify NFT",
             description: `An AI-generated artwork from AIArtify.`,
-            image: hostedImageUrl,
+            image: hostedImageUrl, // Use the public URL from the image host
             attributes: [
               {
                 trait_type: "Original Prompt",
-                value: prompt,
+                value: prompt, // This is the final prompt used for generation
               },
               {
                 trait_type: "Refined Prompt",
@@ -189,9 +175,11 @@ export default function GeneratePage() {
               }
             ]
         };
-        
-        setMintingStep("Step 2/3: Uploading Metadata...");
-        const tokenURI = await uploadMetadataToJSONBin(metadata);
+
+        // Encode the metadata to a Base64 data URI
+        const metadataJson = JSON.stringify(metadata);
+        const base64Metadata = Buffer.from(metadataJson).toString('base64');
+        const tokenURI = `data:application/json;base64,${base64Metadata}`;
         
         setMintingStep("Step 3/3: Minting in your wallet...");
 
@@ -199,6 +187,7 @@ export default function GeneratePage() {
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
         
+        // We no longer need to estimate gas manually if the transaction is simple
         const transaction = await contract.mintNFT(walletAddress, tokenURI);
         
         setMintingStep("Waiting for blockchain confirmation...");
@@ -320,7 +309,7 @@ export default function GeneratePage() {
                   width={1024}
                   height={1024}
                   className="h-full w-full rounded-md object-cover"
-                  data-ai-hint="futuristic abstract"
+                  unoptimized
                 />
               ) : (
                 <div className="flex h-full w-full flex-col items-center justify-center p-4 text-center text-muted-foreground">

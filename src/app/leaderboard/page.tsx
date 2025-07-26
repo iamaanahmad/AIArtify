@@ -1,22 +1,22 @@
 
+"use client";
+
+import { useState, useEffect } from "react";
+import { ethers } from "ethers";
 import { Award, Gem, Medal, Trophy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { contractConfig } from "@/lib/web3/config";
 
-const leaderboardData = [
-  { rank: 1, user: "StellarArt", points: 15280, avatar: "https://placehold.co/40x40.png" },
-  { rank: 2, user: "PixelPioneer", points: 12500, avatar: "https://placehold.co/40x40.png" },
-  { rank: 3, user: "NeonNoir", points: 11950, avatar: "https://placehold.co/40x40.png" },
-  { rank: 4, user: "Cogsmith", points: 10800, avatar: "https://placehold.co/40x40.png" },
-  { rank: 5, user: "MysticGrove", points: 9750, avatar: "https://placehold.co/40x40.png" },
-  { rank: 6, user: "AquaRegalia", points: 8900, avatar: "https://placehold.co/40x40.png" },
-  { rank: 7, user: "TranquilZen", points: 8120, avatar: "https://placehold.co/40x40.png" },
-  { rank: 8, user: "SkyArchitect", points: 7640, avatar: "https://placehold.co/40x40.png" },
-  { rank: 9, user: "CosmoExplorer", points: 6880, avatar: "https://placehold.co/40x40.png" },
-  { rank: 10, user: "ArtisanAI", points: 6100, avatar: "https://placehold.co/40x40.png" },
-].sort((a, b) => b.points - a.points);
+interface LeaderboardEntry {
+  rank: number;
+  user: string;
+  points: number;
+  avatar: string;
+}
 
 const rankIcons = [
     { icon: Trophy, color: "text-yellow-400" },
@@ -24,8 +24,73 @@ const rankIcons = [
     { icon: Award, color: "text-yellow-600" }
 ];
 
+const getRpcProvider = () => {
+    return new ethers.JsonRpcProvider("https://hyperion-testnet.metisdevops.link", 599);
+};
+
 
 export default function LeaderboardPage() {
+    const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchLeaderboard = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const provider = getRpcProvider();
+                const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, provider);
+
+                const events = await contract.queryFilter(contract.filters.Transfer(ethers.ZeroAddress));
+                const totalSupply = events.length;
+                
+                if (totalSupply === 0) {
+                    setLeaderboardData([]);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const ownerCounts: { [address: string]: number } = {};
+                const ownerPromises = [];
+
+                for (let i = 1; i <= totalSupply; i++) {
+                    ownerPromises.push(contract.ownerOf(i).catch(() => null));
+                }
+
+                const owners = await Promise.all(ownerPromises);
+                
+                owners.forEach(owner => {
+                    if (owner) {
+                        ownerCounts[owner] = (ownerCounts[owner] || 0) + 1;
+                    }
+                });
+
+                const sortedCreators = Object.entries(ownerCounts)
+                    .sort(([, countA], [, countB]) => countB - countA)
+                    .slice(0, 10); // Top 10
+
+                const data: LeaderboardEntry[] = sortedCreators.map(([address, count], index) => ({
+                    rank: index + 1,
+                    user: `${address.substring(0, 6)}...${address.substring(address.length - 4)}`,
+                    points: count * 100, // Assign points per NFT
+                    avatar: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${address}`,
+                }));
+
+                setLeaderboardData(data);
+
+            } catch (err) {
+                console.error("Failed to fetch leaderboard data:", err);
+                setError("Could not load the leaderboard. Please try again later.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchLeaderboard();
+    }, []);
+
+
   return (
     <div className="w-full space-y-8">
       <div className="px-4 sm:px-6">
@@ -37,11 +102,11 @@ export default function LeaderboardPage() {
         </p>
       </div>
 
-      <Card className="sm:rounded-none">
+      <Card className="w-full sm:rounded-none">
         <CardHeader>
           <CardTitle>Top Creators</CardTitle>
           <CardDescription>
-            Rankings are updated in real-time based on creative activities.
+            Rankings are based on the number of NFTs minted on-chain.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -54,7 +119,41 @@ export default function LeaderboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {leaderboardData.map((entry, index) => {
+              {isLoading && (
+                 Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell className="text-center">
+                            <div className="flex items-center justify-center">
+                                <Skeleton className="h-6 w-10" />
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-3">
+                                <Skeleton className="h-10 w-10 rounded-full" />
+                                <Skeleton className="h-5 w-32" />
+                            </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                             <Skeleton className="h-5 w-16 ml-auto" />
+                        </TableCell>
+                    </TableRow>
+                 ))
+              )}
+              {!isLoading && error && (
+                 <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center text-destructive">
+                        {error}
+                    </TableCell>
+                 </TableRow>
+              )}
+               {!isLoading && !error && leaderboardData.length === 0 && (
+                 <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center">
+                        No creators yet. Be the first!
+                    </TableCell>
+                 </TableRow>
+              )}
+              {!isLoading && !error && leaderboardData.map((entry, index) => {
                 const RankIcon = index < 3 ? rankIcons[index].icon : Gem;
                 const iconColor = index < 3 ? rankIcons[index].color : "text-muted-foreground/60";
 
@@ -63,7 +162,7 @@ export default function LeaderboardPage() {
                     <TableCell className="text-center font-bold">
                         <div className="flex items-center justify-center gap-2">
                             <RankIcon className={cn("size-5", iconColor)} />
-                            <span>{index + 1}</span>
+                            <span>{entry.rank}</span>
                         </div>
                     </TableCell>
                     <TableCell>
