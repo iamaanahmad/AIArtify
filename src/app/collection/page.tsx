@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWallet } from "@/hooks/use-wallet";
 import { contractConfig } from "@/lib/web3/config";
+import { safeContractCall } from "@/lib/web3/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Wallet } from "lucide-react";
 
@@ -57,11 +58,18 @@ export default function CollectionPage() {
       
       const nftPromises = events.map(async (event): Promise<NftData | null> => {
         // The token ID is the third argument in the Transfer event
-        const tokenId = event.args?.[2];
+        // Handle both EventLog and Log types
+        if (!('args' in event) || !event.args) return null;
+        const tokenId = event.args[2];
         if (!tokenId) return null;
 
         try {
-          const tokenURI = await contract.tokenURI(tokenId);
+          // Use safe contract calls to handle non-existent tokens
+          const owner = await safeContractCall(() => contract.ownerOf(tokenId));
+          if (!owner) return null;
+          
+          const tokenURI = await safeContractCall(() => contract.tokenURI(tokenId));
+          if (!tokenURI) return null;
           
           if (tokenURI.startsWith('data:application/json;base64,')) {
             const base64String = tokenURI.split(',')[1];

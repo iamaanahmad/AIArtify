@@ -8,6 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { contractConfig } from "@/lib/web3/config";
+import { safeContractCall } from "@/lib/web3/utils";
 
 interface NftMetadata {
   name: string;
@@ -63,8 +64,12 @@ export default function GalleryPage() {
         for (let i = 1; i <= totalSupply; i++) {
           nftPromises.push((async () => {
             try {
-              const tokenURI = await contract.tokenURI(i);
-              const owner = await contract.ownerOf(i);
+              // Use safe contract calls to handle non-existent tokens
+              const owner = await safeContractCall(() => contract.ownerOf(i));
+              if (!owner) return null;
+              
+              const tokenURI = await safeContractCall(() => contract.tokenURI(i));
+              if (!tokenURI) return null;
 
               let metadata: NftMetadata;
               if (tokenURI.startsWith('data:application/json;base64,')) {
