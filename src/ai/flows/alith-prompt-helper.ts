@@ -1,5 +1,4 @@
 // src/ai/flows/alith-prompt-helper.ts
-'use server';
 
 /**
  * @fileOverview Uses the Alith AI agent to help users improve their text prompts for generating AI art.

@@ -7,8 +7,7 @@ import Image from "next/image";
 import { ethers } from "ethers";
 import axios from "axios";
 
-import { alithPromptHelper, type AlithPromptHelperOutput } from "@/ai/flows/alith-prompt-helper";
-import { generateArt } from "@/ai/flows/generate-art-flow";
+import { type AlithPromptHelperOutput } from "@/ai/flows/alith-prompt-helper";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { contractConfig } from "@/lib/web3/config";
+import { storeNftMetadata } from "@/lib/nft-storage";
 import { useWallet } from "@/hooks/use-wallet";
 import Link from "next/link";
 import { ToastAction } from "@/components/ui/toast";
@@ -30,7 +30,7 @@ export default function GeneratePage() {
   const [mintingStep, setMintingStep] = useState("");
   const [lastMintTx, setLastMintTx] = useState<string | null>(null);
 
-  const { walletAddress, connectWallet, isBrowser } = useWallet();
+  const { walletAddress, connectWallet, isBrowser, isCorrectNetwork, switchToMetisNetwork } = useWallet();
 
   const { toast } = useToast();
 
@@ -54,7 +54,19 @@ export default function GeneratePage() {
     setIsRefining(true);
     setRefinedResult(null);
     try {
-      const result = await alithPromptHelper({ prompt });
+      const response = await fetch('/api/alith-prompt-helper', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to refine prompt');
+      }
+      
+      const result = await response.json();
       setRefinedResult(result);
       setPrompt(result.refinedPrompt);
     } catch (error) {
@@ -82,7 +94,19 @@ export default function GeneratePage() {
     setImageUrl(null);
     setLastMintTx(null);
     try {
-      const result = await generateArt({ prompt });
+      const response = await fetch('/api/generate-art', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate art');
+      }
+      
+      const result = await response.json();
       setImageUrl(result.imageUrl);
     } catch (error) {
       console.error("Error generating art:", error);
@@ -104,12 +128,19 @@ export default function GeneratePage() {
   };
 
   const uploadImageToImgBB = async (dataUri: string): Promise<string> => {
+    console.log('=== IMGBB UPLOAD DEBUG ===');
+    console.log('Input data URI length:', dataUri.length);
+    console.log('Data URI prefix:', dataUri.substring(0, 50));
+    
     // We expect the data URI to be 'data:image/png;base64,....'
     // The API needs just the base64 part.
     const base64Data = dataUri.split(",")[1];
+    console.log('Extracted base64 length:', base64Data.length);
+    
     const formData = new FormData();
     formData.append("image", base64Data);
 
+    console.log('Uploading to ImgBB...');
     const response = await axios.post(
       `https://api.imgbb.com/1/upload?key=5646315e9455d5ea1fa66362d1b33433`,
       formData,
@@ -120,10 +151,16 @@ export default function GeneratePage() {
       }
     );
 
+    console.log('ImgBB response status:', response.status);
+    console.log('ImgBB response data:', response.data);
+
     if (response.data.success) {
       // Use the https URL for better compatibility and to avoid mixed content issues.
-      return response.data.data.url.replace(/^http:/, 'https:');
+      const imageUrl = response.data.data.url.replace(/^http:/, 'https:');
+      console.log('✅ Image uploaded successfully:', imageUrl);
+      return imageUrl;
     } else {
+      console.error('❌ ImgBB upload failed:', response.data);
       throw new Error("Image upload failed: " + response.data.error.message);
     }
   };
@@ -181,13 +218,31 @@ export default function GeneratePage() {
         const base64Metadata = Buffer.from(metadataJson).toString('base64');
         const tokenURI = `data:application/json;base64,${base64Metadata}`;
         
+        // Debug: Log the metadata and tokenURI we're about to send
+        console.log('=== MINTING DEBUG ===');
+        console.log('Metadata object:', metadata);
+        console.log('Metadata JSON:', metadataJson);
+        console.log('Base64 metadata length:', base64Metadata.length);
+        console.log('TokenURI length:', tokenURI.length);
+        console.log('TokenURI preview:', tokenURI.substring(0, 100) + '...');
+        
         setMintingStep("Step 3/3: Minting in your wallet...");
 
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, signer);
         
+        // Debug: Test if we can call the contract function before minting
+        console.log('Testing contract before minting...');
+        try {
+          const testCall = await contract.name();
+          console.log('Contract name:', testCall);
+        } catch (testError) {
+          console.error('Contract test call failed:', testError);
+        }
+        
         // We no longer need to estimate gas manually if the transaction is simple
+        console.log('Calling mintNFT with params:', { to: walletAddress, tokenURI: tokenURI.substring(0, 50) + '...' });
         const transaction = await contract.mintNFT(walletAddress, tokenURI);
         
         setMintingStep("Waiting for blockchain confirmation...");
@@ -196,6 +251,74 @@ export default function GeneratePage() {
         
         if (!receipt) {
           throw new Error("Transaction receipt is null");
+        }
+
+        console.log('=== POST-MINT VERIFICATION ===');
+        console.log('Transaction receipt:', receipt);
+        
+        // Extract token ID from the receipt
+        let tokenId: bigint | null = null;
+        try {
+          // Look for Transfer event in the logs
+          const transferLog = receipt.logs.find((log: any) => {
+            try {
+              const parsed = contract.interface.parseLog({ topics: log.topics, data: log.data });
+              return parsed?.name === 'Transfer' && parsed.args[0] === ethers.ZeroAddress;
+            } catch {
+              return false;
+            }
+          });
+          
+          if (transferLog) {
+            const parsed = contract.interface.parseLog({ topics: transferLog.topics, data: transferLog.data });
+            tokenId = parsed?.args[2] as bigint;
+            console.log('Minted token ID:', tokenId?.toString());
+            
+            // Store NFT metadata locally as a fallback
+            if (tokenId) {
+              const nftMetadata = {
+                tokenId: tokenId.toString(),
+                name: metadata.name,
+                description: metadata.description,
+                image: metadata.image,
+                originalPrompt: metadata.attributes.find(attr => attr.trait_type === "Original Prompt")?.value || "",
+                refinedPrompt: metadata.attributes.find(attr => attr.trait_type === "Refined Prompt")?.value || "",
+                reasoning: metadata.attributes.find(attr => attr.trait_type === "Alith's Reasoning")?.value || "",
+                txHash: receipt.hash,
+                mintedAt: Date.now(),
+                walletAddress: walletAddress!
+              };
+              storeNftMetadata(nftMetadata);
+              console.log('✅ Stored NFT metadata locally for token:', tokenId.toString());
+            }
+            
+            // Immediately try to fetch the tokenURI to see if it was stored
+            if (tokenId) {
+              setTimeout(async () => {
+                try {
+                  console.log('Verifying tokenURI storage...');
+                  const storedURI = await contract.tokenURI(tokenId);
+                  console.log('Stored tokenURI:', storedURI);
+                  console.log('Original tokenURI:', tokenURI);
+                  console.log('URIs match:', storedURI === tokenURI);
+                  
+                  if (!storedURI) {
+                    console.error('❌ CRITICAL: tokenURI was not stored in contract!');
+                    console.log('✅ Using local storage fallback instead');
+                  } else if (storedURI === tokenURI) {
+                    console.log('✅ SUCCESS: tokenURI was stored correctly');
+                  } else {
+                    console.warn('⚠️ WARNING: tokenURI was stored but differs from original');
+                  }
+                } catch (verifyError) {
+                  console.error('Failed to verify tokenURI:', verifyError);
+                  console.log('✅ Contract has issues, but local storage backup available');
+                }
+              }, 2000); // Wait 2 seconds for blockchain to settle
+            }
+          }
+        } catch (logError) {
+          console.error('Failed to parse transaction logs:', logError);
         }
 
         setLastMintTx(receipt.hash);
@@ -246,6 +369,18 @@ export default function GeneratePage() {
             Bring your imagination to life. Describe anything, and our AI will create a unique piece of art for you.
           </p>
         </div>
+
+        {walletAddress && !isCorrectNetwork && (
+          <Alert variant="destructive">
+            <AlertTitle>Wrong Network</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              <span>Please switch to Metis Hyperion Testnet to mint NFTs.</span>
+              <Button variant="outline" size="sm" onClick={switchToMetisNetwork}>
+                Switch Network
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card>
           <CardHeader>

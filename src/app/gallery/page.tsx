@@ -8,6 +8,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { contractConfig } from "@/lib/web3/config";
+import { getRpcProvider, safeContractCall, queryEventsInChunks } from "@/lib/web3/utils";
+import { getStoredNfts } from "@/lib/nft-storage";
+import { recoverNftMetadataFromTx } from "@/lib/metadata-recovery";
 
 interface NftMetadata {
   name: string;
@@ -16,98 +19,182 @@ interface NftMetadata {
   attributes: { trait_type: string; value: string }[];
 }
 
-interface NftData {
+interface PublicNftData {
   id: string;
   creator: string;
+  title: string;
   prompt: string;
   imageUrl: string;
   avatarUrl: string;
+  txHash: string;
 }
 
-const getRpcProvider = () => {
-    return new ethers.JsonRpcProvider("https://hyperion-testnet.metisdevops.link", 599);
-};
-
-
 export default function GalleryPage() {
-  const [nfts, setNfts] = useState<NftData[]>([]);
+  const [nfts, setNfts] = useState<PublicNftData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchNfts = async () => {
+    const fetchPublicNfts = async () => {
+      console.log('=== PUBLIC GALLERY DEBUG START ===');
       setIsLoading(true);
       setError(null);
+      
       try {
         const provider = getRpcProvider();
         const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, provider);
         
-        // This is a common pattern for contracts that don't have a built-in enumerator
-        // We rely on the implicit total supply being equal to the latest token ID.
-        // This assumes token IDs are sequential starting from 1.
-        let totalSupply;
-        try {
-            // A common way to get total supply if the contract supports it (like from _nextTokenId in OZ's ERC721)
-            // If the contract doesn't explicitly expose total supply, we may need another method.
-            // A workaround can be to check tokens until we hit a nonexistent one.
-            // Let's assume a reasonable upper limit for a demo.
-             const events = await contract.queryFilter(contract.filters.Transfer(ethers.ZeroAddress));
-             totalSupply = BigInt(events.length);
-        } catch (e) {
-            console.warn("Could not determine total supply directly, will iterate up to a limit.");
-            totalSupply = BigInt(50); // Fallback for demo purposes
+        console.log('=== STEP 1: Getting ALL mint events ===');
+        const currentBlock = await provider.getBlockNumber();
+        console.log('Current block:', currentBlock);
+        
+        // Query all mint events (from zero address to any address)
+        const fromBlock = Math.max(0, currentBlock - 50000); // Last ~50k blocks should cover all NFTs
+        console.log(`Querying all mint events from block ${fromBlock} to ${currentBlock}`);
+        
+        const mintFilter = contract.filters.Transfer(ethers.ZeroAddress, null, null);
+        const allMints = await safeContractCall(() => 
+          contract.queryFilter(mintFilter, fromBlock, currentBlock)
+        );
+        
+        console.log('Total mint events found:', allMints?.length || 0);
+        
+        if (!allMints || allMints.length === 0) {
+          console.log('No mint events found');
+          setNfts([]);
+          setIsLoading(false);
+          return;
         }
 
+        console.log('=== STEP 2: Getting local storage data ===');
+        const localNfts = getStoredNfts();
+        console.log('Local NFTs available:', localNfts.length);
 
-        const nftPromises: Promise<NftData | null>[] = [];
-        for (let i = 1; i <= totalSupply; i++) {
-          nftPromises.push((async () => {
-            try {
-              const tokenURI = await contract.tokenURI(i);
-              const owner = await contract.ownerOf(i);
+        console.log('=== STEP 3: Processing mint events for public gallery ===');
+        const publicNftPromises = allMints.map(async (event, index): Promise<PublicNftData | null> => {
+          try {
+            console.log(`Processing mint event ${index + 1}/${allMints.length}`);
+            
+            const eventLog = event as ethers.EventLog;
+            if (!eventLog.args) return null;
 
-              let metadata: NftMetadata;
-              if (tokenURI.startsWith('data:application/json;base64,')) {
-                const base64String = tokenURI.split(',')[1];
-                const jsonString = Buffer.from(base64String, 'base64').toString('utf8');
-                metadata = JSON.parse(jsonString);
-              } else {
-                 // Fallback for http URLs if needed in future
-                 const response = await fetch(tokenURI);
-                 if (!response.ok) return null;
-                 metadata = await response.json();
-              }
-              
-              const promptAttr = metadata.attributes?.find(attr => attr.trait_type === "Refined Prompt")?.value || "No prompt found";
+            const to = eventLog.args[1]; // recipient address
+            const tokenId = eventLog.args[2]; // token ID
+            const txHash = eventLog.transactionHash;
+            
+            console.log(`Token ${tokenId}: to=${to}, tx=${txHash}`);
 
-              return {
-                id: i.toString(),
-                creator: `${owner.substring(0, 6)}...${owner.substring(owner.length - 4)}`,
-                prompt: metadata.name || promptAttr,
-                imageUrl: metadata.image,
-                avatarUrl: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${owner}`,
-              };
-            } catch (err) {
-              // This error is expected if a token was burned or doesn't exist.
-              // console.log(`Token with ID ${i} likely doesn't exist or was burned.`, err);
+            // Verify current ownership (token might have been transferred)
+            const currentOwner = await safeContractCall(() => contract.ownerOf(tokenId));
+            if (!currentOwner) {
+              console.log(`Token ${tokenId} does not exist or was burned`);
               return null;
             }
-          })());
-        }
 
-        const results = await Promise.all(nftPromises);
-        const validNfts = results.filter((nft): nft is NftData => nft !== null).reverse(); // Show newest first
+            // Try to get metadata from multiple sources
+            let metadata = null;
+            let source = 'unknown';
+
+            // 1. Try local storage first
+            const localNft = localNfts.find(nft => nft.tokenId === tokenId.toString());
+            if (localNft) {
+              metadata = {
+                name: localNft.name,
+                description: localNft.description,
+                image: localNft.image,
+                attributes: [
+                  { trait_type: "Original Prompt", value: localNft.originalPrompt },
+                  { trait_type: "Refined Prompt", value: localNft.refinedPrompt },
+                  { trait_type: "Alith's Reasoning", value: localNft.reasoning }
+                ]
+              };
+              source = 'local';
+              console.log(`Token ${tokenId}: Found in local storage`);
+            }
+
+            // 2. Try contract tokenURI (unlikely to work but worth trying)
+            if (!metadata) {
+              const tokenURI = await safeContractCall(() => contract.tokenURI(tokenId));
+              if (tokenURI && tokenURI.startsWith('data:application/json;base64,')) {
+                try {
+                  const base64String = tokenURI.split(',')[1];
+                  const jsonString = Buffer.from(base64String, 'base64').toString('utf8');
+                  metadata = JSON.parse(jsonString);
+                  source = 'contract';
+                  console.log(`Token ${tokenId}: Found in contract`);
+                } catch (parseError) {
+                  console.log(`Token ${tokenId}: Failed to parse contract metadata`);
+                }
+              }
+            }
+
+            // 3. Try transaction recovery
+            if (!metadata && txHash) {
+              console.log(`Token ${tokenId}: Trying transaction recovery...`);
+              try {
+                const recoveredMetadata = await recoverNftMetadataFromTx(txHash);
+                if (recoveredMetadata) {
+                  metadata = recoveredMetadata;
+                  source = 'recovery';
+                  console.log(`Token ${tokenId}: Recovered from transaction`);
+                }
+              } catch (recoveryError) {
+                console.log(`Token ${tokenId}: Recovery failed`, recoveryError);
+              }
+            }
+
+            // 4. Create fallback entry if no metadata found
+            if (!metadata) {
+              console.log(`Token ${tokenId}: No metadata found, creating fallback`);
+              source = 'fallback';
+              metadata = {
+                name: `NFT #${tokenId}`,
+                description: "An AI-generated artwork from AIArtify",
+                image: '/placeholder-nft.svg',
+                attributes: [{ trait_type: "Original Prompt", value: "Metadata not available" }]
+                };
+            }
+
+            // Create public NFT data
+            const publicNft: PublicNftData = {
+              id: tokenId.toString(),
+              creator: `${currentOwner.substring(0, 6)}...${currentOwner.substring(currentOwner.length - 4)}`,
+              title: metadata.name,
+              prompt: metadata.attributes?.find(attr => attr.trait_type === "Refined Prompt")?.value || 
+                     metadata.attributes?.find(attr => attr.trait_type === "Original Prompt")?.value || 
+                     metadata.name,
+              imageUrl: metadata.image,
+              avatarUrl: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${currentOwner}`,
+              txHash: txHash || 'N/A'
+            };
+
+            console.log(`Token ${tokenId}: Created public NFT data (source: ${source})`);
+            return publicNft;
+
+          } catch (err) {
+            console.error(`Failed to process mint event:`, err);
+            return null;
+          }
+        });
+
+        const results = await Promise.all(publicNftPromises);
+        const validNfts = results.filter((nft): nft is PublicNftData => nft !== null).reverse(); // Show newest first
+        
+        console.log('=== GALLERY RESULT ===');
+        console.log('Total public NFTs:', validNfts.length);
+        console.log('Public NFTs:', validNfts);
+        
         setNfts(validNfts);
 
       } catch (err) {
-        console.error("Failed to fetch NFTs:", err);
+        console.error("Failed to fetch public NFTs:", err);
         setError("Could not load the gallery. Please try again later.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchNfts();
+    fetchPublicNfts();
   }, []);
 
   return (
@@ -165,7 +252,7 @@ export default function GalleryPage() {
                 <CardContent className="p-0">
                   <Image
                     src={nft.imageUrl}
-                    alt={nft.prompt}
+                    alt={nft.title}
                     width={600}
                     height={600}
                     className="aspect-square w-full object-cover transition-transform duration-300 hover:scale-105"
@@ -173,7 +260,8 @@ export default function GalleryPage() {
                   />
                 </CardContent>
                 <CardHeader className="p-4">
-                  <CardTitle className="truncate text-base">{nft.prompt}</CardTitle>
+                  <CardTitle className="truncate text-base">{nft.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground truncate">{nft.prompt}</p>
                 </CardHeader>
                 <CardFooter className="p-4 pt-0">
                     <div className="flex w-full items-center gap-2">

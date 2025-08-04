@@ -1,0 +1,109 @@
+page.tsx:131 === IMGBB UPLOAD DEBUG ===
+page.tsx:132 Input data URI length: 1804962
+page.tsx:133 Data URI prefix: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAA
+page.tsx:138 Extracted base64 length: 1804940
+page.tsx:143 Uploading to ImgBB...
+page.tsx:154 ImgBB response status: 200
+page.tsx:155 ImgBB response data: Object
+page.tsx:160 ✅ Image uploaded successfully: https://i.ibb.co/8DY3bq7j/40abc4262c67.png
+page.tsx:222 === MINTING DEBUG ===
+page.tsx:223 Metadata object: Object
+page.tsx:224 Metadata JSON: {"name":"Celestial Sovereign","description":"An AI-generated artwork from AIArtify.","image":"https://i.ibb.co/8DY3bq7j/40abc4262c67.png","attributes":[{"trait_type":"Original Prompt","value":"A majestic eagle adorned with a crown of shimmering starlight, soaring through a cosmic nebula filled with swirling iridescent gases, hyperrealistic, intricate details, 8k, dramatic lighting, ethereal atmosphere, inspired by Gustave Doré"},{"trait_type":"Refined Prompt","value":"A majestic eagle adorned with a crown of shimmering starlight, soaring through a cosmic nebula filled with swirling iridescent gases, hyperrealistic, intricate details, 8k, dramatic lighting, ethereal atmosphere, inspired by Gustave Doré"},{"trait_type":"Alith's Reasoning","value":"The original prompt was good, but I've enhanced it by adding more descriptive detail to the nebula, upping the resolution to 8k, specifying dramatic lighting and an ethereal atmosphere, and citing Gustave Doré as inspiration to give the image a more artistic feel."}]}
+page.tsx:225 Base64 metadata length: 1372
+page.tsx:226 TokenURI length: 1401
+page.tsx:227 TokenURI preview: data:application/json;base64,eyJuYW1lIjoiQ2VsZXN0aWFsIFNvdmVyZWlnbiIsImRlc2NyaXB0aW9uIjoiQW4gQUktZ2V...
+page.tsx:236 Testing contract before minting...
+inpage.js:1  MetaMask - RPC Error: Internal JSON-RPC error. Object
+(anonymous) @ inpage.js:1
+page.tsx:245 Calling mintNFT with params: Object
+page.tsx:256 === POST-MINT VERIFICATION ===
+page.tsx:257 Transaction receipt: ContractTransactionReceipt
+page.tsx:275 Minted token ID: 17
+nft-storage.ts:31 ✅ Stored NFT metadata locally: 17
+page.tsx:292 ✅ Stored NFT metadata locally for token: 17
+page.tsx:299 Verifying tokenURI storage...
+inpage.js:1  MetaMask - RPC Error: Internal JSON-RPC error. Object
+(anonymous) @ inpage.js:1
+page.tsx:315 ✅ Contract has issues, but local storage backup available
+
+My Collection page console:
+page.tsx:41 === COLLECTION DEBUG START ===
+page.tsx:42 fetchNfts called with address: 0xd1c17c98f84639e96a38d77496016e416077e1c7
+page.tsx:43 Contract address: 0x401fab91bde961cfcac8c54f5466ab39c7203803
+page.tsx:55 Provider network: 133717
+page.tsx:64 === STEP 1: Basic contract check ===
+page.tsx:67 Contract code length: 19070
+page.tsx:73 === CONTRACT FUNCTIONS DEBUG ===
+page.tsx:75 Contract fragments: 34
+page.tsx:76 Available functions: (17) ['approve(address,uint256)', 'mintNFT(address,string)', 'renounceOwnership()', 'safeTransferFrom(address,address,uint256)', 'safeTransferFrom(address,address,uint256,bytes)', 'setApprovalForAll(address,bool)', 'transferFrom(address,address,uint256)', 'transferOwnership(address)', 'balanceOf(address)', 'getApproved(uint256)', 'isApprovedForAll(address,address)', 'name()', 'owner()', 'ownerOf(uint256)', 'supportsInterface(bytes4)', 'symbol()', 'tokenURI(uint256)']
+page.tsx:86 === STEP 2: Getting ALL transfer events (recent blocks only) ===
+page.tsx:88 Current block: 4135947
+page.tsx:92 Querying Transfer events from block 4125947 to 4135947
+page.tsx:99 All Transfer events found: 3
+page.tsx:102 Sample transfer events: (3) [EventLog, EventLog, EventLog]
+page.tsx:109 Mint events found: 3
+page.tsx:120 Events involving user address: 3
+page.tsx:121 User events: (3) [EventLog, EventLog, EventLog]
+page.tsx:125 === STEP 3: Getting mint events to user address ===
+page.tsx:131 Mint events to user: 3
+page.tsx:132 Mint to user events: (3) [EventLog, EventLog, EventLog]
+page.tsx:159 === STEP 5: Processing mint events ===
+page.tsx:163 Found 3 locally stored NFTs
+page.tsx:172 Processing mint event 1/3: EventLog {provider: JsonRpcProvider, transactionHash: '0x16aff6a18601b078c63c42e7b82c5d6cc58a78e18c1c1f791ac25e3a0d90190a', blockHash: '0xcbe1eccf74b6005aa0946ccc7a34e9bd92105e3d61bd5160cc2892fd4dd27c6e', blockNumber: 4126685, removed: false, …}
+page.tsx:181 Processing token ID: 15
+page.tsx:172 Processing mint event 2/3: EventLog {provider: JsonRpcProvider, transactionHash: '0x50a26411081cc47091515b4ede747a3e8c628bcd0843d9fdfc3d95016d515e91', blockHash: '0x7ea2639303eaef429128d4a2d4cf93f15448f49155bf088de2c17e996fba7b62', blockNumber: 4132510, removed: false, …}
+page.tsx:181 Processing token ID: 16
+page.tsx:172 Processing mint event 3/3: EventLog {provider: JsonRpcProvider, transactionHash: '0xfb86b58c31d8e911bd6ea94c66199d12ea78514d82ad97912522f6ec09f892be', blockHash: '0x32ea2cc6e85622dcf2e5525246417eb18135f9974dc257af6abaf06d8d09f7a5', blockNumber: 4135891, removed: false, …}
+page.tsx:181 Processing token ID: 17
+page.tsx:192 Current owner of token 15 : 0xD1c17c98f84639e96A38d77496016E416077e1C7
+page.tsx:200 === STEP 6: Trying to get token metadata ===
+page.tsx:192 Current owner of token 16 : 0xD1c17c98f84639e96A38d77496016E416077e1C7
+page.tsx:200 === STEP 6: Trying to get token metadata ===
+page.tsx:192 Current owner of token 17 : 0xD1c17c98f84639e96A38d77496016E416077e1C7
+page.tsx:200 === STEP 6: Trying to get token metadata ===
+utils.ts:12 Token does not exist or was burned
+utils.ts:12 Token does not exist or was burned
+utils.ts:12 Token does not exist or was burned
+page.tsx:203 tokenURI() result for 15 : null
+page.tsx:207 tokenURI() failed, trying alternatives...
+page.tsx:203 tokenURI() result for 16 : null
+page.tsx:207 tokenURI() failed, trying alternatives...
+page.tsx:203 tokenURI() result for 17 : null
+page.tsx:207 tokenURI() failed, trying alternatives...
+page.tsx:211 getTokenURI() result: null
+page.tsx:211 getTokenURI() result: null
+page.tsx:211 getTokenURI() result: null
+page.tsx:216 uri() result: null
+page.tsx:220 === DEBUGGING CONTRACT STATE ===
+page.tsx:216 uri() result: null
+page.tsx:220 === DEBUGGING CONTRACT STATE ===
+page.tsx:216 uri() result: null
+page.tsx:220 === DEBUGGING CONTRACT STATE ===
+page.tsx:226 Direct call failed: Error: missing revert data (action="call", data=null, reason=null, transaction={ "data": "0xc87b56dd000000000000000000000000000000000000000000000000000000000000000f", "to": "0x401FAb91BdE961cfcac8c54F5466aB39c7203803" }, invocation=null, revert=null, code=CALL_EXCEPTION, version=6.15.0)
+    at makeError (errors.ts:698:21)
+    at getBuiltinCallException (abi-coder.ts:118:12)
+    at AbiCoder.getBuiltinCallException (abi-coder.ts:235:16)
+    at JsonRpcProvider.getRpcError (provider-jsonrpc.ts:1016:32)
+    at provider-jsonrpc.ts:571:45
+page.tsx:231 Trying local storage fallback...
+page.tsx:234 ✅ Found NFT in local storage: {tokenId: '15', name: 'AIArtify NFT', description: 'An AI-generated artwork from AIArtify.', image: 'https://i.ibb.co/XxJW5Mjg/2fc1c626752f.png', originalPrompt: 'A majestic lion with a crown of stars, in a cosmic nebula, hyperrealistic, 4k', …}
+page.tsx:242 Local NFT data created: {id: '15', title: 'AIArtify NFT', prompt: 'A majestic lion with a crown of stars, in a cosmic nebula, hyperrealistic, 4k', imageUrl: 'https://i.ibb.co/XxJW5Mjg/2fc1c626752f.png', txHash: '0x16aff6a18601b078c63c42e7b82c5d6cc58a78e18c1c1f791ac25e3a0d90190a'}
+page.tsx:226 Direct call failed: Error: missing revert data (action="call", data=null, reason=null, transaction={ "data": "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000010", "to": "0x401FAb91BdE961cfcac8c54F5466aB39c7203803" }, invocation=null, revert=null, code=CALL_EXCEPTION, version=6.15.0)
+    at makeError (errors.ts:698:21)
+    at getBuiltinCallException (abi-coder.ts:118:12)
+    at AbiCoder.getBuiltinCallException (abi-coder.ts:235:16)
+    at JsonRpcProvider.getRpcError (provider-jsonrpc.ts:1016:32)
+    at provider-jsonrpc.ts:571:45
+page.tsx:231 Trying local storage fallback...
+page.tsx:234 ✅ Found NFT in local storage: {tokenId: '16', name: 'Celestial Majesty', description: 'An AI-generated artwork from AIArtify.', image: 'https://i.ibb.co/8n2MFnqG/26286a5cc72a.png', originalPrompt: 'A majestic feline deity adorned with a crown of ce…articles, inspired by the Hubble Space Telescope.', …}
+page.tsx:242 Local NFT data created: {id: '16', title: 'Celestial Majesty', prompt: 'A majestic feline deity adorned with a crown of ce…articles, inspired by the Hubble Space Telescope.', imageUrl: 'https://i.ibb.co/8n2MFnqG/26286a5cc72a.png', txHash: '0x50a26411081cc47091515b4ede747a3e8c628bcd0843d9fdfc3d95016d515e91'}
+page.tsx:226 Direct call failed: Error: missing revert data (action="call", data=null, reason=null, transaction={ "data": "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000011", "to": "0x401FAb91BdE961cfcac8c54F5466aB39c7203803" }, invocation=null, revert=null, code=CALL_EXCEPTION, version=6.15.0)
+    at makeError (errors.ts:698:21)
+    at getBuiltinCallException (abi-coder.ts:118:12)
+    at AbiCoder.getBuiltinCallException (abi-coder.ts:235:16)
+    at JsonRpcProvider.getRpcError (provider-jsonrpc.ts:1016:32)
+    at provider-jsonrpc.ts:571:45
+page.tsx:231 Trying local storage fallback...
+page.tsx:234 ✅ Found NFT in local storage: {tokenId: '17', name: 'Celestial Sovereign', description: 'An AI-generated artwork from AIArtify.', image: 'https://i.ibb.co/8DY3bq7j/40abc4262c67.png', originalPrompt: 'A majestic eagle adorned with a crown of shimmerin…ng, ethereal atmosphere, inspired by Gustave Doré', …}
+page.tsx:242 Local NFT data created: {id: '17', title: 'Celestial Sovereign', prompt: 'A majestic eagle adorned with a crown of shimmerin…ng, ethereal atmosphere, inspired by Gustave Doré', imageUrl: 'https://i.ibb.co/8DY3bq7j/40abc4262c67.png', txHash: '0xfb86b58c31d8e911bd6ea94c66199d12ea78514d82ad97912522f6ec09f892be'}
+page.tsx:352 Final NFTs: (3) [{…}, {…}, {…}]
