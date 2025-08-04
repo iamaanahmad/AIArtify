@@ -160,8 +160,8 @@ export default function GalleryPage() {
               id: tokenId.toString(),
               creator: `${currentOwner.substring(0, 6)}...${currentOwner.substring(currentOwner.length - 4)}`,
               title: metadata.name,
-              prompt: metadata.attributes?.find(attr => attr.trait_type === "Refined Prompt")?.value || 
-                     metadata.attributes?.find(attr => attr.trait_type === "Original Prompt")?.value || 
+              prompt: metadata.attributes?.find((attr: any) => attr.trait_type === "Refined Prompt")?.value || 
+                     metadata.attributes?.find((attr: any) => attr.trait_type === "Original Prompt")?.value || 
                      metadata.name,
               imageUrl: metadata.image,
               avatarUrl: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${currentOwner}`,

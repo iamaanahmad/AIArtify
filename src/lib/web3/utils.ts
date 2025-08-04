@@ -8,6 +8,7 @@ export async function safeContractCall<T>(fn: () => Promise<T>): Promise<T | nul
     if (error.code === 'CALL_EXCEPTION') {
       if (error.reason === 'ERC721: invalid token ID' || 
           error.reason === 'ERC721: owner query for nonexistent token' ||
+          error.reason?.includes('ERC721NonexistentToken') ||
           error.message?.includes('missing revert data')) {
         console.log('Token does not exist or was burned');
         return null;
