@@ -105,11 +105,19 @@ export default function GalleryPage() {
                 attributes: [
                   { trait_type: "Original Prompt", value: localNft.originalPrompt },
                   { trait_type: "Refined Prompt", value: localNft.refinedPrompt },
-                  { trait_type: "Alith's Reasoning", value: localNft.reasoning }
+                  { trait_type: "Alith's Reasoning", value: localNft.reasoning },
+                  // BONUS TRACK: Include LazAI metadata in gallery display
+                  ...(localNft.lazaiReasoning ? [{ trait_type: "LazAI Reasoning", value: localNft.lazaiReasoning }] : []),
+                  ...(localNft.lazaiModel ? [{ trait_type: "LazAI Model", value: localNft.lazaiModel }] : []),
+                  ...(localNft.lazaiConfidence ? [{ trait_type: "LazAI Confidence", value: localNft.lazaiConfidence }] : []),
                 ]
               };
               source = 'local';
-              console.log(`Token ${tokenId}: Found in local storage`);
+              console.log(`Token ${tokenId}: Found in local storage with LazAI data:`, {
+                hasLazaiReasoning: !!localNft.lazaiReasoning,
+                lazaiModel: localNft.lazaiModel,
+                lazaiConfidence: localNft.lazaiConfidence,
+              });
             }
 
             // 2. Try contract tokenURI (unlikely to work but worth trying)

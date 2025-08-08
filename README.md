@@ -4,7 +4,174 @@
   </a>
 </p>
 
-<h1 align="center">🎨 AIArtify</h1>
+# 🚀 AIArtify - Advanced LazAI + Hyperion Integration
+
+[![LazAI Integration](https://img.shields.io/badge/LazAI-Integrated-blue.svg)](https://lazai.network) [![Hyperion Nodes](https://img.shields.io/badge/Hyperion-Decentralized-purple.svg)](https://hyperion.sh) [![Next.js](https://img.shields.io/badge/Next.js-15.3.3-black.svg)](https://nextjs.org) [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://typescriptlang.org)
+
+> **🏆 DOMINANCE ACHIEVEMENT**: AIArtify showcases the most advanced LazAI + Hyperion integration with decentralized reasoning, multi-modal analysis, proof-of-reasoning, and collaborative art creation.
+
+## 🎯 **Quick Start - Experience the Future**
+
+```bash
+# Clone and install
+git clone https://github.com/your-username/aiartify.git
+cd aiartify
+npm install
+
+# Configure environment
+cp .env.example .env.local
+# Add your keys: PRIVATE_KEY, LLM_API_KEY, GEMINI_API_KEY
+
+# Launch the experience
+npm run dev
+# Visit http://localhost:9002
+```
+
+**🚀 First-time users**: Start with `/onboarding` for a guided LazAI journey!
+
+### 🔧 LazAI Configuration
+```bash
+# Add to .env.local
+PRIVATE_KEY=your_wallet_private_key
+LLM_API_KEY=your_llm_api_key
+# OR
+OPENAI_API_KEY=your_openai_api_key
+```
+
+### 📚 Documentation
+- [Bonus Track Implementation Details](./docs/bonus-track-lazai-integration.md)
+- [LazAI Network Documentation](https://alith.lazai.network/docs/lazai)
+
+---
+
+## Overview
+
+AIArtify is a cutting-edge platform that combines the power of AI art generation with blockchain technology. Users can create unique artworks using AI prompts, refine them with intelligent suggestions, and mint them as NFTs on the Metis Hyperion testnet.
+
+## Features
+
+### 🎨 AI Art Generation
+- **Smart Prompt Enhancement**: Powered by Alith AI for better prompts
+- **High-Quality Generation**: Uses Gemini 2.0 Flash for image creation
+- **Real-time Preview**: See your art as it's generated
+
+### 🔗 Blockchain Integration
+- **NFT Minting**: Mint your artwork directly on Metis Hyperion testnet
+- **On-chain Metadata**: All art details stored permanently on blockchain
+- **Wallet Integration**: MetaMask support for seamless transactions
+
+### 🌟 Community Features
+- **Public Gallery**: Browse all community creations
+- **Collection View**: Track your personal art collection
+- **Leaderboard**: See top creators and trending artworks
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, React 18, TypeScript
+- **AI Integration**: Google Genkit, Alith AI, **LazAI SDK**
+- **Blockchain**: Ethers.js, Metis Hyperion testnet
+- **UI**: Tailwind CSS, Radix UI components
+- **Storage**: IPFS via ImgBB, Local storage fallback
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18+
+- MetaMask wallet
+- Metis Hyperion testnet setup
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/iamaanahmad/AIArtify.git
+   cd AIArtify
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Setup**
+   Create `.env.local`:
+   ```bash
+   # LazAI Configuration (for Bonus Track)
+   PRIVATE_KEY=your_wallet_private_key
+   LLM_API_KEY=your_llm_api_key
+   # OR alternatively
+   OPENAI_API_KEY=your_openai_api_key
+   ```
+
+4. **Run the application**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open your browser**
+   Navigate to `http://localhost:9002`
+
+### MetaMask Setup
+
+1. Add Metis Hyperion Testnet:
+   - Network Name: Metis Hyperion Testnet
+   - RPC URL: `https://hyperion-testnet-rpc.metisdevops.link`
+   - Chain ID: `59902`
+   - Currency: METIS
+
+2. Get testnet tokens from the [Metis faucet](https://faucet.metisdevops.link/)
+
+## Usage
+
+1. **Create Art**: Enter a descriptive prompt for your desired artwork
+2. **Refine with AI**: Use Alith AI to enhance your prompt (powered by LazAI)
+3. **Generate**: Create your unique AI artwork
+4. **Mint NFT**: Connect wallet and mint to blockchain
+5. **Share**: Your art appears in the public gallery
+
+## Smart Contract
+
+- **Network**: Metis Hyperion Testnet
+- **Contract Address**: [View on Explorer](https://hyperion-testnet-explorer.metisdevops.link/)
+- **Features**: ERC-721 compliant, metadata storage, ownership tracking
+
+## Architecture
+
+```
+src/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── gallery/           # Public gallery page
+│   └── collection/        # User collection page
+├── components/            # Reusable UI components
+├── ai/                    # AI integration (Genkit + LazAI)
+├── lib/                   # Utilities and services
+│   ├── lazai-client.ts    # LazAI SDK integration
+│   └── web3/              # Blockchain utilities
+└── hooks/                 # React hooks
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- **Metis Foundation** for the Hyperion testnet infrastructure
+- **LazAI Network** for the decentralized AI capabilities
+- **Google** for Genkit and Gemini AI models
+- **Alith Team** for the AI prompt enhancement framework
+
+---
+
+**Built for the Metis Hyperion Hackathon** 🏆</h1>
 
 <p align="center">
   <strong>A revolutionary dApp that empowers users to become digital artists by transforming their text prompts into unique, mintable NFTs on the blockchain.</strong>

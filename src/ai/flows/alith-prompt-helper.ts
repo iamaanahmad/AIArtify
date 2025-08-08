@@ -1,15 +1,19 @@
 // src/ai/flows/alith-prompt-helper.ts
 
 /**
- * @fileOverview Uses the Alith AI agent to help users improve their text prompts for generating AI art.
+ * @fileOverview Uses the real LazAI Agent to help users improve their text prompts for generating AI art.
+ * 
+ * BONUS TRACK INTEGRATION: This now uses the official LazAI SDK instead of just mimicking the logic.
+ * Real API calls are made to LazAI endpoints and reasoning is stored on-chain.
  *
- * - alithPromptHelper - A function that helps refine user prompts using Alith.
+ * - alithPromptHelper - A function that helps refine user prompts using real LazAI integration.
  * - AlithPromptHelperInput - The input type for the alithPromptHelper function.
  * - AlithPromptHelperOutput - The return type for the alithPromptHelper function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { createLazAIAgent, isLazAIAvailable } from '@/lib/lazai-client';
 
 const AlithPromptHelperInputSchema = z.object({
   prompt: z.string().describe('The original text prompt provided by the user.'),
@@ -20,11 +24,52 @@ const AlithPromptHelperOutputSchema = z.object({
   title: z.string().describe('A short, creative title for the artwork based on the refined prompt.'),
   refinedPrompt: z.string().describe('The refined text prompt suggested by Alith.'),
   reasoning: z.string().optional().describe('Alith reasoning for why the prompt was changed, can be omitted.'),
+  lazaiReasoning: z.string().optional().describe('Deep reasoning provided by LazAI SDK integration.'),
+  lazaiConfidence: z.number().optional().describe('Confidence score from LazAI reasoning (0-1).'),
+  lazaiModel: z.string().optional().describe('The LazAI model used for reasoning.'),
+  lazaiTxHash: z.string().optional().describe('Transaction hash for on-chain reasoning storage.'),
 });
 export type AlithPromptHelperOutput = z.infer<typeof AlithPromptHelperOutputSchema>;
 
 export async function alithPromptHelper(input: AlithPromptHelperInput): Promise<AlithPromptHelperOutput> {
-  return alithPromptHelperFlow(input);
+  // First, get the basic refined prompt using the existing Genkit flow
+  const basicResult = await alithPromptHelperFlow(input);
+  
+  // BONUS TRACK: Enhance with real LazAI SDK integration
+  if (isLazAIAvailable()) {
+    try {
+      console.log('🚀 BONUS TRACK: Using real LazAI SDK integration');
+      
+      const lazaiAgent = createLazAIAgent();
+      
+      // Call the actual LazAI reasoning endpoint
+      const lazaiResult = await lazaiAgent.reason({
+        prompt: input.prompt,
+        context: `Basic refinement: ${basicResult.refinedPrompt}`,
+      });
+      
+      console.log('✅ LazAI reasoning completed:', {
+        model: lazaiResult.model,
+        confidence: lazaiResult.confidence,
+        txHash: lazaiResult.transactionHash,
+      });
+      
+      return {
+        ...basicResult,
+        lazaiReasoning: lazaiResult.reasoning,
+        lazaiConfidence: lazaiResult.confidence,
+        lazaiModel: lazaiResult.model,
+        lazaiTxHash: lazaiResult.transactionHash,
+      };
+    } catch (error) {
+      console.error('❌ LazAI integration failed, falling back to basic:', error);
+      // Fall back to basic result if LazAI fails
+    }
+  } else {
+    console.log('⚠️ LazAI SDK not configured, using basic implementation');
+  }
+  
+  return basicResult;
 }
 
 const alithPrompt = ai.definePrompt({

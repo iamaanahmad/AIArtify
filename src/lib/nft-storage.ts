@@ -1,5 +1,6 @@
 /**
  * Local NFT metadata storage to work around contract issues
+ * BONUS TRACK: Enhanced with LazAI reasoning metadata
  */
 
 export interface StoredNftMetadata {
@@ -10,6 +11,11 @@ export interface StoredNftMetadata {
   originalPrompt: string;
   refinedPrompt: string;
   reasoning: string;
+  // BONUS TRACK: LazAI reasoning metadata
+  lazaiReasoning?: string;
+  lazaiModel?: string;
+  lazaiConfidence?: string;
+  lazaiTxHash?: string;
   txHash: string;
   mintedAt: number;
   walletAddress: string;

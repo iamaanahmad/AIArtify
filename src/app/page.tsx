@@ -29,6 +29,9 @@ export default function GeneratePage() {
   const [isMinting, setIsMinting] = useState(false);
   const [mintingStep, setMintingStep] = useState("");
   const [lastMintTx, setLastMintTx] = useState<string | null>(null);
+  // BONUS TRACK: Enhanced UX states for LazAI integration
+  const [lazaiProcessing, setLazaiProcessing] = useState(false);
+  const [lazaiStep, setLazaiStep] = useState("");
 
   const { walletAddress, connectWallet, isBrowser, isCorrectNetwork, switchToMetisNetwork } = useWallet();
 
@@ -52,8 +55,12 @@ export default function GeneratePage() {
       return;
     }
     setIsRefining(true);
+    setLazaiProcessing(true);
+    setLazaiStep("Initializing Alith AI...");
     setRefinedResult(null);
     try {
+      setLazaiStep("Connecting to LazAI network...");
+      
       const response = await fetch('/api/alith-prompt-helper', {
         method: 'POST',
         headers: {
@@ -66,9 +73,26 @@ export default function GeneratePage() {
         throw new Error('Failed to refine prompt');
       }
       
+      setLazaiStep("Processing with LazAI reasoning...");
       const result = await response.json();
+      
       setRefinedResult(result);
       setPrompt(result.refinedPrompt);
+      
+      // Show success message with LazAI details if available
+      if (result.lazaiReasoning) {
+        setLazaiStep("LazAI reasoning completed!");
+        toast({
+          title: "🚀 Enhanced with LazAI!",
+          description: `Prompt refined using ${result.lazaiModel || 'LazAI'} with ${Math.round((result.lazaiConfidence || 0) * 100)}% confidence`,
+          duration: 5000,
+        });
+      } else {
+        toast({
+          title: "Prompt refined!",
+          description: "Your prompt has been enhanced by Alith AI",
+        });
+      }
     } catch (error) {
       console.error("Error refining prompt:", error);
       toast({
@@ -78,6 +102,8 @@ export default function GeneratePage() {
       });
     } finally {
       setIsRefining(false);
+      setLazaiProcessing(false);
+      setLazaiStep("");
     }
   };
 
@@ -195,7 +221,7 @@ export default function GeneratePage() {
         setMintingStep("Step 2/3: Creating On-Chain Metadata...");
         const metadata = {
             name: refinedResult?.title || "AIArtify NFT",
-            description: `An AI-generated artwork from AIArtify.`,
+            description: `An AI-generated artwork from AIArtify, enhanced with LazAI reasoning.`,
             image: hostedImageUrl, // Use the public URL from the image host
             attributes: [
               {
@@ -209,6 +235,23 @@ export default function GeneratePage() {
               {
                 trait_type: "Alith's Reasoning",
                 value: refinedResult?.reasoning || "N/A",
+              },
+              // BONUS TRACK: Store LazAI reasoning in NFT metadata
+              {
+                trait_type: "LazAI Reasoning",
+                value: refinedResult?.lazaiReasoning || "Not available",
+              },
+              {
+                trait_type: "LazAI Model",
+                value: refinedResult?.lazaiModel || "N/A",
+              },
+              {
+                trait_type: "LazAI Confidence",
+                value: refinedResult?.lazaiConfidence?.toString() || "N/A",
+              },
+              {
+                trait_type: "LazAI Transaction",
+                value: refinedResult?.lazaiTxHash || "N/A",
               }
             ]
         };
@@ -284,6 +327,11 @@ export default function GeneratePage() {
                 originalPrompt: metadata.attributes.find(attr => attr.trait_type === "Original Prompt")?.value || "",
                 refinedPrompt: metadata.attributes.find(attr => attr.trait_type === "Refined Prompt")?.value || "",
                 reasoning: metadata.attributes.find(attr => attr.trait_type === "Alith's Reasoning")?.value || "",
+                // BONUS TRACK: Store LazAI reasoning data in local metadata
+                lazaiReasoning: metadata.attributes.find(attr => attr.trait_type === "LazAI Reasoning")?.value || "",
+                lazaiModel: metadata.attributes.find(attr => attr.trait_type === "LazAI Model")?.value || "",
+                lazaiConfidence: metadata.attributes.find(attr => attr.trait_type === "LazAI Confidence")?.value || "",
+                lazaiTxHash: metadata.attributes.find(attr => attr.trait_type === "LazAI Transaction")?.value || "",
                 txHash: receipt.hash,
                 mintedAt: Date.now(),
                 walletAddress: walletAddress!
@@ -407,6 +455,18 @@ export default function GeneratePage() {
                 {isGenerating ? "Generating Art..." : "Generate Art"}
               </Button>
             </div>
+            
+            {/* BONUS TRACK: LazAI Processing Indicator */}
+            {lazaiProcessing && lazaiStep && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <div className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                </div>
+                <span className="font-medium">🚀 LazAI Integration:</span>
+                <span>{lazaiStep}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -416,8 +476,32 @@ export default function GeneratePage() {
           <Alert>
              <Sparkles className="h-4 w-4" />
             <AlertTitle>{refinedResult.title || "Alith's Suggestion"}</AlertTitle>
-            <AlertDescription>
-                {refinedResult.reasoning}
+            <AlertDescription className="space-y-2">
+                <p>{refinedResult.reasoning}</p>
+                {/* BONUS TRACK: Display LazAI reasoning if available */}
+                {refinedResult.lazaiReasoning && (
+                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-blue-600 dark:text-blue-400 font-semibold">🚀 LazAI Enhanced Reasoning:</span>
+                      {refinedResult.lazaiModel && (
+                        <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+                          {refinedResult.lazaiModel}
+                        </span>
+                      )}
+                      {refinedResult.lazaiConfidence && (
+                        <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded">
+                          {Math.round(refinedResult.lazaiConfidence * 100)}% confidence
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">{refinedResult.lazaiReasoning}</p>
+                    {refinedResult.lazaiTxHash && (
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                        Reasoning stored on-chain: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{refinedResult.lazaiTxHash.substring(0, 16)}...</code>
+                      </p>
+                    )}
+                  </div>
+                )}
             </AlertDescription>
           </Alert>
         )}
