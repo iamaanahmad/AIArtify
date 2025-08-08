@@ -39,16 +39,29 @@ let ChainConfig: any = null;
 let ContractConfig: any = null;
 let isRealLazAI = false;
 
-// Try to load the real LazAI SDK
+// Try to load the real LazAI SDK with build-time safety
 try {
+  // Only attempt to load during runtime, not during build
+  if (typeof window === 'undefined' && process.env.NODE_ENV !== 'development') {
+    console.log('🔄 Build-time: Skipping LazAI SDK load, using fallback mode');
+    throw new Error('Build-time fallback');
+  }
+  
   console.log('🔄 Attempting to load LazAI SDK...');
   
-  // Try different import strategies
+  // Dynamic import with try-catch for different strategies
   let alithModule;
   try {
-    alithModule = require('alith');
-  } catch (e) {
-    alithModule = require('alith/lib');
+    // Try main entry first
+    alithModule = eval('require')('alith');
+  } catch (e1) {
+    try {
+      // Try lib entry
+      alithModule = eval('require')('alith/lib');
+    } catch (e2) {
+      // Try direct access
+      alithModule = eval('require')('alith/dist/index.js');
+    }
   }
   
   if (alithModule && alithModule.Agent) {
@@ -59,7 +72,7 @@ try {
   
   // Try to load LazAI Client components
   try {
-    const lazaiModule = require('alith/lazai');
+    const lazaiModule = eval('require')('alith/lazai');
     if (lazaiModule) {
       LazAIClient = lazaiModule.Client;
       ChainConfig = lazaiModule.ChainConfig;
@@ -71,8 +84,15 @@ try {
   }
   
 } catch (error) {
-  console.warn('⚠️ LazAI SDK not available, using fallback mode');
-  console.warn('Error details:', error);
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  
+  if (typeof window === 'undefined' && process.env.NODE_ENV !== 'development') {
+    console.log('🏗️ Build-time: Using fallback mode for LazAI SDK');
+  } else {
+    console.warn('⚠️ LazAI SDK not available, using fallback mode');
+    console.warn('Error details:', errorMessage);
+  }
+  
   isRealLazAI = false;
 }
 
