@@ -37,6 +37,23 @@ export default function GeneratePage() {
 
   const { toast } = useToast();
 
+  // Simple markdown processing function for AI reasoning text
+  const processMarkdown = (text: string): JSX.Element[] => {
+    if (!text) return [];
+    
+    // Split text by **bold** patterns
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        // Remove the ** and make it bold
+        const boldText = part.slice(2, -2);
+        return <strong key={index} className="font-semibold text-gray-900 dark:text-gray-100">{boldText}</strong>;
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
   const handleCreateAnother = () => {
     setRefinedResult(null);
     setImageUrl(null);
@@ -286,7 +303,43 @@ export default function GeneratePage() {
         
         // We no longer need to estimate gas manually if the transaction is simple
         console.log('Calling mintNFT with params:', { to: walletAddress, tokenURI: tokenURI.substring(0, 50) + '...' });
-        const transaction = await contract.mintNFT(walletAddress, tokenURI);
+        
+        // Enhanced gas estimation and transaction handling
+        let transaction;
+        try {
+          // First check if we can estimate gas
+          console.log('Estimating gas for transaction...');
+          const gasEstimate = await contract.mintNFT.estimateGas(walletAddress, tokenURI);
+          console.log('Gas estimate:', gasEstimate.toString());
+          
+          // Add some buffer to the gas estimate (20% more)
+          const gasLimit = gasEstimate * BigInt(120) / BigInt(100);
+          console.log('Gas limit with buffer:', gasLimit.toString());
+          
+          // Execute the transaction with proper gas settings
+          transaction = await contract.mintNFT(walletAddress, tokenURI, {
+            gasLimit: gasLimit,
+          });
+          
+          console.log('Transaction submitted:', transaction.hash);
+        } catch (gasError: any) {
+          console.warn('Gas estimation failed, trying with fallback gas:', gasError.message);
+          
+          // Fallback: try without gas estimation but with a reasonable gas limit
+          try {
+            transaction = await contract.mintNFT(walletAddress, tokenURI, {
+              gasLimit: 500000, // 500k gas should be enough for most NFT mints
+            });
+            
+            console.log('Transaction submitted with fallback gas:', transaction.hash);
+          } catch (fallbackError: any) {
+            console.warn('Fallback gas failed, trying without gas limit:', fallbackError.message);
+            
+            // Final fallback: let the provider handle gas estimation
+            transaction = await contract.mintNFT(walletAddress, tokenURI);
+            console.log('Transaction submitted without gas limit:', transaction.hash);
+          }
+        }
         
         setMintingStep("Waiting for blockchain confirmation...");
 
@@ -403,9 +456,6 @@ export default function GeneratePage() {
     }
   }
 
-  const isCtaDisabled = isRefining || isGenerating || isMinting;
-  const isGenerateDisabled = isCtaDisabled || !prompt;
-
   return (
     <div className="container mx-auto max-w-3xl py-4 sm:py-8">
       <div className="space-y-8">
@@ -477,7 +527,7 @@ export default function GeneratePage() {
              <Sparkles className="h-4 w-4" />
             <AlertTitle>{refinedResult.title || "Alith's Suggestion"}</AlertTitle>
             <AlertDescription className="space-y-2">
-                <p>{refinedResult.reasoning}</p>
+                <div>{processMarkdown(refinedResult.reasoning)}</div>
                 {/* BONUS TRACK: Display LazAI reasoning if available */}
                 {refinedResult.lazaiReasoning && (
                   <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -494,7 +544,7 @@ export default function GeneratePage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">{refinedResult.lazaiReasoning}</p>
+                    <div className="text-sm text-blue-700 dark:text-blue-300">{processMarkdown(refinedResult.lazaiReasoning)}</div>
                     {refinedResult.lazaiTxHash && (
                       <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
                         Reasoning stored on-chain: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{refinedResult.lazaiTxHash.substring(0, 16)}...</code>
