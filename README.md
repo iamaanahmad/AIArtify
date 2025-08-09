@@ -2,12 +2,12 @@
 ### *The Ultimate LazAI-Powered NFT Creation Experience*
 
 <p align="center">
-  <img src="https://i.ibb.co/93dZ5qdH/Art-Chain-AILogo.png" alt="AIArtify Logo" width="150">
+  <img src="https://i.ibb.co/93dZ5qdH/Art-Chain-AILogo.png" alt="AIArtify Logo">
 </p>
 
 [![🚀 LIVE DEMO](https://img.shields.io/badge/🚀-LIVE_DEMO-FF6B6B?style=for-the-badge&logo=rocket)](https://ai-artify.vercel.app/)
 [![🏆 LazAI BONUS TRACK](https://img.shields.io/badge/🏆-LazAI_BONUS_TRACK-FFD93D?style=for-the-badge&logo=trophy)](https://lazai.network)
-[![⚡ HYPERION POWERED](https://img.shields.io/badge/⚡-HYPERION_POWERED-6BCF7F?style=for-the-badge&logo=ethereum)](https://hyperion.sh)
+[![⚡ HYPERION POWERED](https://img.shields.io/badge/⚡-HYPERION_POWERED-6BCF7F?style=for-the-badge&logo=ethereum)](https://hyperion.metis.io/)
 
 <h2>🌟 AI-Powered NFT Creation Platform 🌟</h2>
 
@@ -16,7 +16,7 @@
 
 ---
 
-### 🎬 **60-Second Demo** | 🚀 **Quick Start** | 📚 **Full Documentation**
+### 🎬 **[60-Second Demo](https://ai-artify.vercel.app/)** | 🚀 **[Quick Start](#🚀-quick-start---get-running-in-60-seconds)** | 📚 **[Full Documentation](#📚-comprehensive-documentation)**
 
 ---
 
@@ -89,11 +89,11 @@ npm run dev
 
 <div align="center">
 
-**🎯 FIRST TIME?** Start with [`/onboarding`](http://localhost:9002/onboarding) for the **complete LazAI experience!**
+**🎯 FIRST TIME?** Start with the [**complete experience**](https://ai-artify.vercel.app/) to explore all features!
 
-**⚔️ WANT TO SEE THE POWER?** Try [`/comparison`](http://localhost:9002/comparison) for **LazAI vs Gemini battles!**
+**⚔️ WANT TO SEE THE POWER?** Try the [**live demo**](https://ai-artify.vercel.app/) for **AI-enhanced art creation!**
 
-**🏆 READY TO COMPETE?** Join [`/battles`](http://localhost:9002/battles) for **collaborative reasoning!**
+**🏆 READY TO CREATE?** Visit the [**main platform**](https://ai-artify.vercel.app/) for **collaborative art generation!**
 
 </div>
 
@@ -125,7 +125,7 @@ npm run dev
 ### 📱 **Interactive Onboarding Experience**
 *7-step guided journey with real-time LazAI demonstrations*
 
-<img src="https://i.ibb.co/TByzgxrn/image.png" alt="Onboarding Flow" width="100%">
+<img src="https://i.ibb.co/39BZy0Qt/image.png" alt="Onboarding Flow" width="100%">
 
 ### ⚔️ **LazAI vs Gemini Comparison Dashboard**
 *Side-by-side performance analysis with live metrics*
@@ -334,7 +334,7 @@ npm start
 ---
 
 <p><em>Built with ❤️ for the Web3 community</em></p>
-<p><strong>© 2024 AIArtify | Powered by LazAI + Hyperion</strong></p>
+<p><strong>© 2025 AIArtify | Powered by LazAI + Hyperion</strong></p>
 
 <p>
   <a href="https://ai-artify.vercel.app/">🌐 Live Demo</a> • 

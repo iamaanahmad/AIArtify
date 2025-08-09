@@ -54,6 +54,10 @@ export default function GeneratePage() {
     });
   };
 
+  // Computed state for button controls
+  const isCtaDisabled = isRefining || isGenerating || isMinting;
+  const isGenerateDisabled = isCtaDisabled || !prompt;
+
   const handleCreateAnother = () => {
     setRefinedResult(null);
     setImageUrl(null);
