@@ -24,14 +24,44 @@ export interface SocialPlatform {
   features: string[];
 }
 
+// Random caption generator for X and Telegram
+function getRandomCaption(data: SocialShareData, platform: 'twitter' | 'telegram'): string {
+  const url = typeof window !== 'undefined' ? window.location.href : '';
+  const baseCaptions = [
+    `Minted on AIArtify! 🎨✨ Check it out: ${url} @MetisL2 @AIArtifyMETIS`,
+    `My latest AI NFT on-chain! ${url} @MetisL2 @AIArtifyMETIS`,
+    `AI + Blockchain = Forever Art. See my creation: ${url} @MetisL2 @AIArtifyMETIS`,
+    `Proud to mint this on AIArtify. View: ${url} @MetisL2 @AIArtifyMETIS`,
+    `Just dropped a new AI NFT! ${url} @MetisL2 @AIArtifyMETIS`,
+    `AI art, on-chain, mine forever. ${url} @MetisL2 @AIArtifyMETIS`,
+    `Created with AI, secured by Metis. ${url} @MetisL2 @AIArtifyMETIS`,
+    `Explore my AI NFT: ${url} @MetisL2 @AIArtifyMETIS`,
+    `Prompt: "${data.prompt.substring(0, 60)}..." ${url} @MetisL2 @AIArtifyMETIS`,
+    `Title: ${data.title} | ${url} @MetisL2 @AIArtifyMETIS`,
+  ];
+  // X (Twitter) character limit is 280
+  let caption = baseCaptions[Math.floor(Math.random() * baseCaptions.length)];
+  if (platform === 'twitter' && caption.length > 280) {
+    caption = caption.substring(0, 277) + '...';
+  }
+  return caption;
+}
+
 export const socialPlatforms: Record<string, SocialPlatform> = {
+  twitter: {
+    name: "X (Twitter)",
+    icon: "twitter",
+    shareUrl: (data: SocialShareData) => {
+      const tweetText = encodeURIComponent(getRandomCaption(data, 'twitter'));
+      return `https://twitter.com/intent/tweet?text=${tweetText}`;
+    },
+    features: ["tweets"],
+  },
   telegram: {
     name: "Telegram",
     icon: "telegram",
     shareUrl: (data: SocialShareData) => {
-      const text = encodeURIComponent(
-        `🎨 ${data.title}\n\n${data.description}\n\nPrompt: "${data.prompt}"\n\nMinted on Metis Hyperion\n${typeof window !== 'undefined' ? window.location.href : ''}\n@AIArtifyMETIS #AIArtify #NFT #Metis #AIArt`
-      );
+      const text = encodeURIComponent(getRandomCaption(data, 'telegram'));
       return `https://t.me/share/url?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${text}`;
     },
     features: ["channels", "groups", "direct"],
@@ -39,79 +69,8 @@ export const socialPlatforms: Record<string, SocialPlatform> = {
   export: {
     name: "Export (Save)",
     icon: "download",
-    shareUrl: (data: SocialShareData) => {
-      return data.imageUrl;
-    },
+    shareUrl: (data: SocialShareData) => data.imageUrl,
     features: ["download"],
-  },
-  twitter: {
-    name: "X (Twitter)",
-    icon: "twitter",
-    shareUrl: (data: SocialShareData) => {
-      // Only @MetisL2 and @AIArtifyMETIS, no extra hashtags
-      const tweetText = encodeURIComponent(
-        `Just minted my AI masterpiece on AIArtify 🎨✨\nOn-chain. Permanent. Mine forever.\nTry creating your own 👉 ${typeof window !== 'undefined' ? window.location.href : ''}\n@MetisL2 @AIArtifyMETIS`
-      );
-      return `https://twitter.com/intent/tweet?text=${tweetText}`;
-    },
-    features: ["tweets", "threads", "spaces"],
-  },
-  instagram: {
-    name: "Instagram Stories",
-    icon: "instagram",
-    shareUrl: (data: SocialShareData) => {
-      return `instagram://story-camera`;
-    },
-    features: ["stories", "reels", "posts"],
-  },
-  discord: {
-    name: "Discord",
-    icon: "discord",
-    shareUrl: (data: SocialShareData) => {
-      const webhookMessage = {
-        embeds: [{
-          title: `🎨 ${data.title}`,
-          description: `**Prompt:** ${data.prompt}\n\n${data.description}`,
-          color: 0x6366f1,
-          image: { url: data.imageUrl },
-          fields: [
-            ...(data.qualityScore ? [{
-              name: "Quality Score",
-              value: `${Math.round(data.qualityScore * 100)}%`,
-              inline: true
-            }] : []),
-            ...(data.mintTxHash ? [{
-              name: "Blockchain",
-              value: `[View Transaction](https://hyperion-testnet-explorer.metisdevops.link/tx/${data.mintTxHash})`,
-              inline: true
-            }] : [])
-          ],
-          footer: {
-            text: "Created with AIArtify • Powered by LazAI",
-            icon_url: `${typeof window !== 'undefined' ? window.location.origin : ''}/logo.png`
-          },
-          timestamp: new Date().toISOString()
-        }]
-      };
-      return `data:application/json,${encodeURIComponent(JSON.stringify(webhookMessage))}`;
-    },
-    features: ["embeds", "webhooks", "bots"],
-  },
-  reddit: {
-    name: "Reddit",
-    icon: "reddit",
-    shareUrl: (data: SocialShareData) => {
-      const title = encodeURIComponent(`🎨 AI-Generated Art: ${data.title}`);
-      const text = encodeURIComponent(
-        `Created this with AIArtify using the prompt: "${data.prompt}"\n\n` +
-        `${data.description}\n\n` +
-        `${data.qualityScore ? `Quality Score: ${Math.round(data.qualityScore * 100)}%\n` : ''}` +
-        `${data.mintTxHash ? `Minted as NFT on Metis Hyperion\n` : ''}` +
-        `\nWhat do you think?`
-      );
-      return `https://www.reddit.com/submit?title=${title}&text=${text}&url=${encodeURIComponent(data.imageUrl)}`;
-    },
-    features: ["communities", "crosspost", "discussions"],
   },
 };
 
@@ -171,15 +130,9 @@ export async function copyShareableContent(data: SocialShareData, platform: stri
   if (!platformConfig) throw new Error(`Platform ${platform} not supported`);
   let content = "";
   if (platform === 'twitter') {
-    content = `Just minted my AI masterpiece on AIArtify 🎨✨\nOn-chain. Permanent. Mine forever.\nTry creating your own 👉 ${typeof window !== 'undefined' ? window.location.href : ''}\n@MetisL2 @AIArtifyMETIS`;
-  } else if (platform === 'discord') {
-    content = `🔥 Just created and minted new AI art on AIArtify!\n🎨 Title: ${data.title}\n🔗 View it: ${typeof window !== 'undefined' ? window.location.href : ''}\nCome join and mint yours 🚀`;
-  } else if (platform === 'reddit') {
-    content = `I just minted my first AI-generated NFT on AIArtify!\n\nPrompt: "${data.prompt}"\n\nTitle: ${data.title}\n\nBlockchain: Metis Hyperion\n\nNFT: ${typeof window !== 'undefined' ? window.location.href : ''}\nWhat do you think of this piece? 🎨`;
-  } else if (platform === 'instagram') {
-    content = `🎨 ${data.title}\n\n${data.description}\n\nPrompt: ${data.prompt}\n\n@AIArtifyMETIS @MetisL2`;
+    content = getRandomCaption(data, 'twitter');
   } else if (platform === 'telegram') {
-    content = `🎨 ${data.title}\n\n${data.description}\n\nPrompt: "${data.prompt}"\n\nMinted on Metis Hyperion\n${typeof window !== 'undefined' ? window.location.href : ''}\n@AIArtifyMETIS @MetisL2`;
+    content = getRandomCaption(data, 'telegram');
   } else if (platform === 'export') {
     content = data.imageUrl;
   } else {

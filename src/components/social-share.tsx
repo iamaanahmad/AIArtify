@@ -140,12 +140,12 @@ export default function SocialShare({ shareData, onShare }: SocialShareProps) {
     }
   };
 
-  // Platform icons mapping
+
+  // Platform icons mapping for only allowed platforms
   const platformIcons: Record<string, React.ReactNode> = {
     twitter: <MessageCircle className="w-4 h-4" />,
-    instagram: <ImageIcon className="w-4 h-4" />,
-    discord: <Hash className="w-4 h-4" />,
-    reddit: <Globe className="w-4 h-4" />
+    telegram: <Globe className="w-4 h-4" />,
+    export: <ImageIcon className="w-4 h-4" />,
   };
 
   const isMobile = typeof window !== 'undefined' && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -167,21 +167,24 @@ export default function SocialShare({ shareData, onShare }: SocialShareProps) {
         </DialogHeader>
         <div className="grid gap-4 py-2 md:py-4">
           <div className="flex flex-wrap gap-2 justify-center">
-            {Object.entries(socialPlatforms).map(([key, platform]) => (
-              <Button
-                key={key}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 px-3 py-2 text-base md:text-sm"
-                onClick={() => handleShare(key)}
-                disabled={isSharing}
-                style={{ minWidth: 120 }}
-                aria-label={`Share to ${platform.name}`}
-              >
-                <span className={`icon-${platform.icon} w-5 h-5`} />
-                {platform.name}
-              </Button>
-            ))}
+            {(['twitter', 'telegram', 'export'] as const).map((key) => {
+              const platform = socialPlatforms[key];
+              return (
+                <Button
+                  key={key}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 px-3 py-2 text-base md:text-sm"
+                  onClick={() => handleShare(key)}
+                  disabled={isSharing}
+                  style={{ minWidth: 120 }}
+                  aria-label={`Share to ${platform.name}`}
+                >
+                  {platformIcons[key]}
+                  {platform.name}
+                </Button>
+              );
+            })}
           </div>
           <div className="flex flex-wrap gap-2 justify-center mt-2">
             <Button variant="outline" size="sm" onClick={handleCopyLink} disabled={isSharing} className="px-3 py-2 text-base md:text-sm" aria-label="Copy Link">

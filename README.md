@@ -2,7 +2,7 @@
 ### *The Ultimate LazAI-Powered NFT Creation Experience*
 
 <p align="center">
-  <img src="https://i.ibb.co/93dZ5qdH/Art-Chain-AILogo.png" alt="AIArtify Logo" width="130" height="130>
+  <img src="https://i.ibb.co/93dZ5qdH/Art-Chain-AILogo.png" alt="AIArtify Logo" width="100" height="100>
 </p>
 
 [![🚀 LIVE DEMO](https://img.shields.io/badge/🚀-LIVE_DEMO-FF6B6B?style=for-the-badge&logo=rocket)](https://ai-artify.vercel.app/)
