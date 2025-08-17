@@ -5,6 +5,9 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { ethers } from "ethers";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import SocialShare from "@/components/social-share";
+import { Share2 } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { contractConfig } from "@/lib/web3/config";
@@ -205,6 +208,7 @@ export default function GalleryPage() {
     fetchPublicNfts();
   }, []);
 
+  const [shareNft, setShareNft] = useState<PublicNftData | null>(null);
   return (
     <div className="space-y-8">
       <div>
@@ -254,35 +258,67 @@ export default function GalleryPage() {
       )}
       
       {!isLoading && !error && nfts.length > 0 && (
+        <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {nfts.map((nft) => (
-              <Card key={nft.id} className="overflow-hidden">
+              <Card key={nft.id} className="overflow-hidden relative group">
                 <CardContent className="p-0">
-                  <Image
-                    src={nft.imageUrl}
-                    alt={nft.title}
-                    width={600}
-                    height={600}
-                    className="aspect-square w-full object-cover transition-transform duration-300 hover:scale-105"
-                    unoptimized // Necessary for external image hosts like i.ibb.co if not in next.config.js
-                  />
+                  <div className="relative">
+                    <Image
+                      src={nft.imageUrl}
+                      alt={nft.title}
+                      width={600}
+                      height={600}
+                      className="aspect-square w-full object-cover transition-transform duration-300 hover:scale-105"
+                      unoptimized
+                    />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white shadow rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label="Share NFT"
+                            onClick={() => setShareNft(nft)}
+                          >
+                            <Share2 className="w-5 h-5 text-blue-600" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Share this NFT</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </CardContent>
                 <CardHeader className="p-4">
                   <CardTitle className="truncate text-base">{nft.title}</CardTitle>
                   <p className="text-sm text-muted-foreground truncate">{nft.prompt}</p>
                 </CardHeader>
                 <CardFooter className="p-4 pt-0">
-                    <div className="flex w-full items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                            <AvatarImage src={nft.avatarUrl} alt={nft.creator} />
-                            <AvatarFallback>{nft.creator.substring(0,2)}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs text-muted-foreground">by {nft.creator}</span>
-                    </div>
+                  <div className="flex w-full items-center gap-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={nft.avatarUrl} alt={nft.creator} />
+                      <AvatarFallback>{nft.creator.substring(0,2)}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs text-muted-foreground">by {nft.creator}</span>
+                  </div>
                 </CardFooter>
               </Card>
             ))}
           </div>
+          {shareNft && (
+            <SocialShare
+              shareData={{
+                imageUrl: shareNft.imageUrl,
+                title: shareNft.title,
+                description: shareNft.title,
+                prompt: shareNft.prompt,
+                mintTxHash: shareNft.txHash,
+                chainData: { network: 'Metis', contractAddress: '', tokenId: shareNft.id },
+              }}
+              onShare={() => setShareNft(null)}
+            />
+          )}
+        </>
       )}
     </div>
   );

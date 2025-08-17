@@ -25,19 +25,34 @@ export interface SocialPlatform {
 }
 
 export const socialPlatforms: Record<string, SocialPlatform> = {
+  telegram: {
+    name: "Telegram",
+    icon: "telegram",
+    shareUrl: (data: SocialShareData) => {
+      const text = encodeURIComponent(
+        `🎨 ${data.title}\n\n${data.description}\n\nPrompt: "${data.prompt}"\n\nMinted on Metis Hyperion\n${typeof window !== 'undefined' ? window.location.href : ''}\n@AIArtifyMETIS #AIArtify #NFT #Metis #AIArt`
+      );
+      return `https://t.me/share/url?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${text}`;
+    },
+    features: ["channels", "groups", "direct"],
+  },
+  export: {
+    name: "Export (Save)",
+    icon: "download",
+    shareUrl: (data: SocialShareData) => {
+      return data.imageUrl;
+    },
+    features: ["download"],
+  },
   twitter: {
     name: "X (Twitter)",
     icon: "twitter",
     shareUrl: (data: SocialShareData) => {
+      // Only @MetisL2 and @AIArtifyMETIS, no extra hashtags
       const tweetText = encodeURIComponent(
-        `🎨 ${data.title}\n\n` +
-        `"${data.prompt}"\n\n` +
-        `${data.qualityScore ? `Quality: ${Math.round(data.qualityScore * 100)}% ` : ''}` +
-        `${data.mintTxHash ? `🔗 Minted on @MetisL2 ` : ''}` +
-        `@AIArtifyMETIS #AIArtify #NFT #Metis #AIArt`
+        `Just minted my AI masterpiece on AIArtify 🎨✨\nOn-chain. Permanent. Mine forever.\nTry creating your own 👉 ${typeof window !== 'undefined' ? window.location.href : ''}\n@MetisL2 @AIArtifyMETIS`
       );
-      const url = encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '');
-      return `https://twitter.com/intent/tweet?text=${tweetText}&url=${url}`;
+      return `https://twitter.com/intent/tweet?text=${tweetText}`;
     },
     features: ["tweets", "threads", "spaces"],
   },
@@ -108,10 +123,22 @@ export async function shareViaWebAPI(data: SocialShareData) {
   if (!canUseWebShare()) throw new Error('Web Share API not supported');
   const shareObj: any = {
     title: data.title,
-    text: `Check out this AI art on AIArtify: "${data.title}"\nPrompt: ${data.prompt}\n@AIArtifyMETIS #AIArtify #NFT #Metis`,
+    text: `Just minted my AI masterpiece on AIArtify 🎨✨\nOn-chain. Permanent. Mine forever.\nTry creating your own 👉 ${typeof window !== 'undefined' ? window.location.href : ''}\n@MetisL2 @AIArtifyMETIS`,
     url: typeof window !== 'undefined' ? window.location.href : ''
   };
-  if (data.imageUrl) shareObj.files = [data.imageUrl];
+  // Try to attach image if supported (most modern browsers, including MetaMask in-app browser)
+  if (navigator.canShare && data.imageUrl) {
+    try {
+      const response = await fetch(data.imageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], 'artwork.png', { type: blob.type });
+      if (navigator.canShare({ files: [file] })) {
+        shareObj.files = [file];
+      }
+    } catch (e) {
+      // fallback: ignore image if can't fetch
+    }
+  }
   await navigator.share(shareObj);
 }
 
@@ -142,19 +169,22 @@ export function generatePreviewMetadata(data: SocialShareData) {
 export async function copyShareableContent(data: SocialShareData, platform: string): Promise<string> {
   const platformConfig = socialPlatforms[platform];
   if (!platformConfig) throw new Error(`Platform ${platform} not supported`);
-  
   let content = "";
-  
   if (platform === 'twitter') {
-    content = `🎨 ${data.title}\n\n"${data.prompt}"\n\n${data.qualityScore ? `Quality: ${Math.round(data.qualityScore * 100)}% ` : ''}${data.mintTxHash ? `🔗 Minted on @MetisL2 ` : ''}@AIArtifyMETIS #AIArtify #NFT #Metis #AIArt`;
-  } else if (platform === 'instagram') {
-    content = `🎨 ${data.title}\n\n${data.description}\n\nPrompt: ${data.prompt}\n\n@AIArtifyMETIS #AIArtify #NFT #Metis`;
+    content = `Just minted my AI masterpiece on AIArtify 🎨✨\nOn-chain. Permanent. Mine forever.\nTry creating your own 👉 ${typeof window !== 'undefined' ? window.location.href : ''}\n@MetisL2 @AIArtifyMETIS`;
   } else if (platform === 'discord') {
-    content = `🎨 **${data.title}**\n\n**Prompt:** ${data.prompt}\n\n${data.description}\n\n${data.qualityScore ? `Quality Score: ${Math.round(data.qualityScore * 100)}%\n` : ''}${data.mintTxHash ? `🔗 Minted on Blockchain\n` : ''}\nCreated with AIArtify • Powered by LazAI`;
+    content = `🔥 Just created and minted new AI art on AIArtify!\n🎨 Title: ${data.title}\n🔗 View it: ${typeof window !== 'undefined' ? window.location.href : ''}\nCome join and mint yours 🚀`;
+  } else if (platform === 'reddit') {
+    content = `I just minted my first AI-generated NFT on AIArtify!\n\nPrompt: "${data.prompt}"\n\nTitle: ${data.title}\n\nBlockchain: Metis Hyperion\n\nNFT: ${typeof window !== 'undefined' ? window.location.href : ''}\nWhat do you think of this piece? 🎨`;
+  } else if (platform === 'instagram') {
+    content = `🎨 ${data.title}\n\n${data.description}\n\nPrompt: ${data.prompt}\n\n@AIArtifyMETIS @MetisL2`;
+  } else if (platform === 'telegram') {
+    content = `🎨 ${data.title}\n\n${data.description}\n\nPrompt: "${data.prompt}"\n\nMinted on Metis Hyperion\n${typeof window !== 'undefined' ? window.location.href : ''}\n@AIArtifyMETIS @MetisL2`;
+  } else if (platform === 'export') {
+    content = data.imageUrl;
   } else {
     content = platformConfig.shareUrl(data);
   }
-  
   await navigator.clipboard.writeText(content);
   return content;
 }
