@@ -24,43 +24,31 @@ export interface SocialPlatform {
   features: string[];
 }
 
-// Social platform configurations
 export const socialPlatforms: Record<string, SocialPlatform> = {
-
-
-// Mobile Web Share API support
-export function canUseWebShare() {
-  return typeof window !== 'undefined' && !!(navigator.share);
-}
-
-export async function shareViaWebAPI(data: SocialShareData) {
-  if (!canUseWebShare()) throw new Error('Web Share API not supported');
-  const shareObj: any = {
-    title: data.title,
-    text: `Check out this AI art on AIArtify: "${data.title}"\nPrompt: ${data.prompt}\n@AIArtifyMETIS #AIArtify #NFT #Metis`,
-    url: window.location.href
-  };
-  if (data.imageUrl) shareObj.files = [data.imageUrl];
-  await navigator.share(shareObj);
-}
-
-// QR code utility (returns a data URL)
-export async function generateQRCode(url: string): Promise<string> {
-  // Use a lightweight QR code library or API
-  // For demo, use Google Chart API
-  return `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(url)}`;
-}
-  
+  twitter: {
+    name: "X (Twitter)",
+    icon: "twitter",
+    shareUrl: (data: SocialShareData) => {
+      const tweetText = encodeURIComponent(
+        `🎨 ${data.title}\n\n` +
+        `"${data.prompt}"\n\n` +
+        `${data.qualityScore ? `Quality: ${Math.round(data.qualityScore * 100)}% ` : ''}` +
+        `${data.mintTxHash ? `🔗 Minted on @MetisL2 ` : ''}` +
+        `@AIArtifyMETIS #AIArtify #NFT #Metis #AIArt`
+      );
+      const url = encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '');
+      return `https://twitter.com/intent/tweet?text=${tweetText}&url=${url}`;
+    },
+    features: ["tweets", "threads", "spaces"],
+  },
   instagram: {
     name: "Instagram Stories",
     icon: "instagram",
     shareUrl: (data: SocialShareData) => {
-      // Instagram doesn't support direct URL sharing, so we provide copy-to-clipboard functionality
       return `instagram://story-camera`;
     },
-    features: ["stories", "reels", "posts"]
+    features: ["stories", "reels", "posts"],
   },
-  
   discord: {
     name: "Discord",
     icon: "discord",
@@ -85,18 +73,15 @@ export async function generateQRCode(url: string): Promise<string> {
           ],
           footer: {
             text: "Created with AIArtify • Powered by LazAI",
-            icon_url: `${window.location.origin}/logo.png`
+            icon_url: `${typeof window !== 'undefined' ? window.location.origin : ''}/logo.png`
           },
           timestamp: new Date().toISOString()
         }]
       };
-      
-      // Return a data URL for webhook payload (Discord bots can use this)
       return `data:application/json,${encodeURIComponent(JSON.stringify(webhookMessage))}`;
     },
-    features: ["embeds", "webhooks", "bots"]
+    features: ["embeds", "webhooks", "bots"],
   },
-  
   reddit: {
     name: "Reddit",
     icon: "reddit",
@@ -111,37 +96,10 @@ export async function generateQRCode(url: string): Promise<string> {
       );
       return `https://www.reddit.com/submit?title=${title}&text=${text}&url=${encodeURIComponent(data.imageUrl)}`;
     },
-    features: ["communities", "crosspost", "discussions"]
-  }
+    features: ["communities", "crosspost", "discussions"],
+  },
 };
 
-// Generate shareable preview metadata for Open Graph
-export function generatePreviewMetadata(data: SocialShareData) {
-  return {
-    title: `${data.title} | AIArtify`,
-    description: data.description || `AI-generated artwork: "${data.prompt.substring(0, 160)}${data.prompt.length > 160 ? '...' : ''}"`,
-    image: data.imageUrl,
-    url: window.location.href,
-    type: "article",
-    site_name: "AIArtify",
-    card: "summary_large_image",
-    creator: "@AIArtify",
-    // Additional blockchain metadata
-    ...(data.chainData && {
-      "blockchain:network": data.chainData.network,
-      "blockchain:contract": data.chainData.contractAddress,
-      "blockchain:token": data.chainData.tokenId || "pending"
-    })
-  };
-}
-
-// Copy shareable content to clipboard
-export async function copyShareableContent(data: SocialShareData, platform: string): Promise<string> {
-  const platformConfig = socialPlatforms[platform];
-  if (!platformConfig) throw new Error(`Platform ${platform} not supported`);
-  let content = "";
-
-// Mobile Web Share API support
 export function canUseWebShare() {
   return typeof window !== 'undefined' && !!(navigator.share);
 }
@@ -151,18 +109,57 @@ export async function shareViaWebAPI(data: SocialShareData) {
   const shareObj: any = {
     title: data.title,
     text: `Check out this AI art on AIArtify: "${data.title}"\nPrompt: ${data.prompt}\n@AIArtifyMETIS #AIArtify #NFT #Metis`,
-    url: window.location.href
+    url: typeof window !== 'undefined' ? window.location.href : ''
   };
   if (data.imageUrl) shareObj.files = [data.imageUrl];
   await navigator.share(shareObj);
 }
 
-// QR code utility (returns a data URL)
 export async function generateQRCode(url: string): Promise<string> {
-  // Use a lightweight QR code library or API
-  // For demo, use Google Chart API
   return `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(url)}`;
 }
+
+export function generatePreviewMetadata(data: SocialShareData) {
+  return {
+    title: `${data.title} | AIArtify`,
+    description: data.description || `AI-generated artwork: "${data.prompt.substring(0, 160)}${data.prompt.length > 160 ? '...' : ''}"`,
+    image: data.imageUrl,
+    url: typeof window !== 'undefined' ? window.location.href : '',
+    type: "article",
+    site_name: "AIArtify",
+    card: "summary_large_image",
+    creator: "@AIArtifyMETIS",
+    "twitter:site": "@AIArtifyMETIS",
+    "twitter:creator": "@AIArtifyMETIS",
+    ...(data.chainData && {
+      "blockchain:network": data.chainData.network,
+      "blockchain:contract": data.chainData.contractAddress,
+      "blockchain:token": data.chainData.tokenId || "pending"
+    })
+  };
+}
+
+export async function copyShareableContent(data: SocialShareData, platform: string): Promise<string> {
+  const platformConfig = socialPlatforms[platform];
+  if (!platformConfig) throw new Error(`Platform ${platform} not supported`);
+  
+  let content = "";
+  
+  if (platform === 'twitter') {
+    content = `🎨 ${data.title}\n\n"${data.prompt}"\n\n${data.qualityScore ? `Quality: ${Math.round(data.qualityScore * 100)}% ` : ''}${data.mintTxHash ? `🔗 Minted on @MetisL2 ` : ''}@AIArtifyMETIS #AIArtify #NFT #Metis #AIArt`;
+  } else if (platform === 'instagram') {
+    content = `🎨 ${data.title}\n\n${data.description}\n\nPrompt: ${data.prompt}\n\n@AIArtifyMETIS #AIArtify #NFT #Metis`;
+  } else if (platform === 'discord') {
+    content = `🎨 **${data.title}**\n\n**Prompt:** ${data.prompt}\n\n${data.description}\n\n${data.qualityScore ? `Quality Score: ${Math.round(data.qualityScore * 100)}%\n` : ''}${data.mintTxHash ? `🔗 Minted on Blockchain\n` : ''}\nCreated with AIArtify • Powered by LazAI`;
+  } else {
+    content = platformConfig.shareUrl(data);
+  }
+  
+  await navigator.clipboard.writeText(content);
+  return content;
+}
+
+export function trackSocialShare(platform: string, data: SocialShareData) {
   const shareEvent = {
     action: "social_share",
     platform: platform,
@@ -170,17 +167,23 @@ export async function generateQRCode(url: string): Promise<string> {
     quality_score: data.qualityScore,
     prompt_length: data.prompt.length,
     timestamp: Date.now(),
-    user_agent: navigator.userAgent
+    user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
   };
-  // Store locally for now (could send to analytics service)
-  const existingShares = JSON.parse(localStorage.getItem("aiartify_social_shares") || "[]");
-  existingShares.push(shareEvent);
-  localStorage.setItem("aiartify_social_shares", JSON.stringify(existingShares.slice(-100))); // Keep last 100
+  
+  if (typeof localStorage !== 'undefined') {
+    const existingShares = JSON.parse(localStorage.getItem("aiartify_social_shares") || "[]");
+    existingShares.push(shareEvent);
+    localStorage.setItem("aiartify_social_shares", JSON.stringify(existingShares.slice(-100)));
+  }
+  
   console.log("📊 Social share tracked:", shareEvent);
 }
 
-// Get social sharing statistics
 export function getSocialStats() {
+  if (typeof localStorage === 'undefined') {
+    return { total: 0, platforms: {}, avgQuality: 0 };
+  }
+  
   const shares = JSON.parse(localStorage.getItem("aiartify_social_shares") || "[]");
   
   const stats = shares.reduce((acc: any, share: any) => {
