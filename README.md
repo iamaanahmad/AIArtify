@@ -13,6 +13,8 @@
 
 **AIArtify revolutionizes AI art creation with a 5-node AI jury system powered by LazAI.** Every artwork is validated by specialized AI analyzers (Creative, Technical, Aesthetic, Balanced, QA), with reasoning stored permanently on-chain. Features include public verification, quality leaderboards, and social sharing.
 
+**Built natively on Metis Hyperion Testnet, leveraging its real-time transaction capabilities and LazAI-powered prompt refinement.**
+
 **📱 Access:** Works seamlessly on both desktop and mobile browsers with offline capabilities (PWA) | **⚡ Demo:** 60-second experience | **🧠 LazAI:** Real SDK integration
 
 [![🚀 LIVE DEMO](https://img.shields.io/badge/🚀-LIVE_DEMO-FF6B6B?style=for-the-badge&logo=rocket)](https://ai-artify.vercel.app/)
@@ -61,6 +63,18 @@
 - **📱 Mobile PWA:** Responsive design, works on all devices
 - **⚡ Real-Time Processing:** 3-5 second consensus with visual breakdown
 - **🛡️ Production Ready:** TypeScript, error handling, graceful fallbacks
+- **🔗 Live Deployment:** **0x9D24b503F3abde31F6861D33e8e20F523f63c6Eb** (Hyperion Testnet)
+
+---
+
+## 🚀 **Why Hyperion?**
+
+AIArtify is purpose-built for the Metis Hyperion chain:
+
+- **⚡ Real-time minting:** Hyperion's low-latency design ensures near-instant NFT creation and gallery updates
+- **🧠 LazAI Integration:** Built-in LazAI prompt refinement enhances creative workflows on-chain
+- **🔗 On-chain permanence:** NFTs store image + metadata directly on Hyperion, guaranteeing authenticity
+- **🌍 Community-first vision:** By building on Hyperion, AIArtify directly contributes to its growing ecosystem of creators and builders
 
 ---
 
