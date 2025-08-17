@@ -1,0 +1,28 @@
+  2025-08-09T19:51:28.732948Z  INFO alith_interface::requests::completion::request: 
+CompletionRequest:
+  total_prompt_tokens: 268
+  messages:
+
+[1mUser[0m:
+"You are Alith, an advanced AI reasoning agent powered by LazAI infrastructure with Hyperion decentralized processing capabilities.\n\n\n🌐 HYPERION NODE ANALYSIS AVAILABLE:\n🔮 **HYPERION NODE REASONING**\n\n**Decentralized Analysis**: This prompt has been processed through Hyperion's distributed AI network..."
+
+  stop_sequences: []
+  grammar_string: None
+  config: 
+    model_ctx_size: 8192
+    inference_ctx_size: 4096
+    requested_response_tokens: Some(4076)
+    actual_request_tokens: Some(4076)
+    frequency_penalty: None
+    presence_penalty: 0.0
+    temperature: 1.0
+    top_p: None
+    retry_after_fail_n_times: 3
+    increase_limit_on_fail: false
+    cache_prompt: false
+  tools: []
+    at crates\interface\src\requests\completion\request.rs:93
+
+  2025-08-09T19:51:29.212535Z  WARN alith_interface::requests::completion::request: e: ClientError(ApiError(ApiError { message: "Authentication Fails, Your api key: ****4MRo is invalid", type: Some("authentication_error"), param: None, code: Some("invalid_request_error") }))
+    at crates\interface\src\requests\completion\request.rs:96
+

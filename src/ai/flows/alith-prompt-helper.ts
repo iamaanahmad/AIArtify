@@ -24,6 +24,7 @@ const AlithPromptHelperOutputSchema = z.object({
   title: z.string().describe('A short, creative title for the artwork based on the refined prompt.'),
   refinedPrompt: z.string().describe('The refined text prompt suggested by Alith.'),
   reasoning: z.string().optional().describe('Alith reasoning for why the prompt was changed, can be omitted.'),
+  qualityScore: z.number().optional().describe('Predicted quality score for the refined prompt (0-1).'),
   lazaiReasoning: z.string().optional().describe('Deep reasoning provided by LazAI SDK integration.'),
   lazaiConfidence: z.number().optional().describe('Confidence score from LazAI reasoning (0-1).'),
   lazaiModel: z.string().optional().describe('The LazAI model used for reasoning.'),

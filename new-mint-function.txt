@@ -1,0 +1,104 @@
+  const handleMintNFT = async () => {
+    if (!walletAddress || !imageUrl) {
+        toast({
+            variant: "destructive",
+            title: "Prerequisites not met",
+            description: "Please connect your wallet and generate an image before minting.",
+        });
+        return;
+    }
+
+    setIsMinting(true);
+    setLastMintTx(null);
+    
+    try {
+        setMintingStep("Step 1/3: Preparing Artwork...");
+        // Upload image to get a stable URL
+        const hostedImageUrl = await uploadImageToImgBB(imageUrl);
+
+        setMintingStep("Step 2/3: Creating Metadata...");
+        const metadata = {
+            name: refinedResult?.title || "AIArtify NFT",
+            description: `AI-generated artwork from AIArtify (Demo Mode)`,
+            image: hostedImageUrl,
+            attributes: [
+              { trait_type: "Creator", value: "AIArtify" },
+              { trait_type: "AI Enhanced", value: "Yes" },
+              { trait_type: "Mode", value: "Demo" },
+              { trait_type: "Prompt", value: prompt.substring(0, 100) + "..." }
+            ]
+        };
+        
+        setMintingStep("Step 3/3: Minting NFT (Demo Mode)...");
+        
+        // Use mock minting endpoint
+        console.log('🎭 Using demo minting mode');
+        const response = await fetch('/api/mock-mint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient: walletAddress,
+            tokenURI: JSON.stringify(metadata)
+          })
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Demo minting failed');
+        }
+
+        console.log('✅ Demo mint successful:', result);
+
+        // Store NFT metadata locally
+        const nftMetadata = {
+          tokenId: result.tokenId.toString(),
+          name: metadata.name,
+          description: metadata.description,
+          image: metadata.image,
+          originalPrompt: prompt,
+          refinedPrompt: refinedResult?.refinedPrompt || prompt,
+          txHash: result.transactionHash,
+          contractAddress: result.contractAddress,
+          minted: new Date().toISOString(),
+          mode: "demo"
+        };
+        
+        const existingNFTs = JSON.parse(localStorage.getItem('aiartifyNFTs') || '[]');
+        existingNFTs.push(nftMetadata);
+        localStorage.setItem('aiartifyNFTs', JSON.stringify(existingNFTs));
+
+        setLastMintTx(result.transactionHash);
+
+        toast({
+            title: "🎉 NFT Minted Successfully! (Demo)",
+            description: "Your artwork has been created in demo mode. Deploy a real contract for blockchain minting.",
+            action: (
+              <div className="flex w-full flex-col gap-2 sm:flex-row">
+                <Button variant="outline" size="sm" onClick={() => handleCopy(result.transactionHash)}>
+                  <Copy className="mr-2" /> Copy ID
+                </Button>
+                <ToastAction altText="View Details" asChild>
+                  <Link href="#" onClick={(e) => { e.preventDefault(); console.log('Demo NFT:', nftMetadata); }}>
+                    View Details
+                  </Link>
+                </ToastAction>
+              </div>
+            ),
+            duration: 10000,
+        });
+
+    } catch (error: any) {
+        console.error("❌ Error in demo minting:", error);
+        
+        toast({
+            variant: "destructive",
+            title: "Demo Minting Failed",
+            description: error.message || "An error occurred during demo minting.",
+            duration: 8000,
+        });
+    } finally {
+        setIsMinting(false);
+        setMintingStep("");
+    }
+  }

@@ -174,73 +174,93 @@ export default function LazAIOnboarding() {
           </p>
         </div>
         
-        {/* Embedded Walkthrough Video */}
-        <div className="max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center justify-center gap-2">
-              🎥 60-Second Complete Walkthrough
-              <Badge variant="secondary" className="bg-red-100 text-red-800">LIVE</Badge>
-            </h3>
-            <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video shadow-lg">
-              {/* Video Player Interface */}
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors cursor-pointer">
-                    <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </div>
-                  <div className="text-white">
-                    <h4 className="font-semibold">LazAI Complete Experience</h4>
-                    <p className="text-sm text-gray-300">Watch all 7 steps in action</p>
-                  </div>
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors shadow-lg">
-                    ▶ Play Demo Video
-                  </button>
-                </div>
-              </div>
-              
-              {/* Simulated Video Timeline */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                <div className="flex items-center gap-3 text-white text-sm">
-                  <button className="hover:text-blue-300 transition-colors">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </button>
-                  <div className="flex-1 bg-white/20 rounded-full h-1 cursor-pointer hover:h-2 transition-all">
-                    <div className="bg-blue-500 h-full rounded-full w-1/3 relative">
-                      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md"></div>
-                    </div>
-                  </div>
-                  <span className="font-mono">0:20 / 1:00</span>
-                  <button className="hover:text-blue-300 transition-colors">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              
-              {/* Chapter Markers */}
-              <div className="absolute bottom-12 left-4 right-4">
-                <div className="flex justify-between text-xs text-white/70">
-                  <span>Intro</span>
-                  <span>LazAI Processing</span>
-                  <span>Blockchain</span>
-                  <span>NFT Creation</span>
-                </div>
-              </div>
-            </div>
-            <div className="text-center space-y-2">
-              <p className="text-sm text-gray-600">
-                See LazAI's Hyperion reasoning, blockchain integration, and NFT generation in real-time
+        {/* Embedded Walkthrough Video - Featured */}
+        <div className="max-w-5xl mx-auto bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 border-2 border-blue-200/50 shadow-2xl">
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-center gap-3">
+                💠 Complete AIArtify Experience
+                <Badge variant="secondary" className="bg-red-100 text-red-800 animate-pulse">
+                  LIVE DEMO
+                </Badge>
+              </h2>
+              <p className="text-gray-600 mt-2">
+                Watch every step of the AI art creation and NFT minting process
               </p>
-              <div className="flex justify-center gap-4 text-xs text-gray-500">
-                <span>✓ Multi-modal AI</span>
-                <span>✓ Distributed reasoning</span>
-                <span>✓ Blockchain proof</span>
-                <span>✓ NFT minting</span>
+            </div>
+            
+            {/* YouTube Embedded Video */}
+            <div className="relative bg-gray-900 rounded-xl overflow-hidden aspect-video shadow-2xl ring-4 ring-blue-200/50">
+              <iframe
+                src="https://www.youtube.com/embed/2xGYbO9PzJM?si=gfPu5p6JerG2by0M"
+                title="AIArtify Complete Walkthrough - LazAI NFT Creation"
+                className="w-full h-full"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+            
+            <div className="text-center space-y-4">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+                <p className="text-sm font-medium text-gray-700 mb-3">
+                  🚀 Complete workflow demonstration featuring:
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="flex flex-col items-center gap-1 p-2 bg-blue-50 rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-medium text-blue-800">LazAI Enhancement</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 p-2 bg-purple-50 rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-purple-600" />
+                    <span className="text-xs font-medium text-purple-800">AI Art Generation</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 p-2 bg-green-50 rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-xs font-medium text-green-800">Metis Blockchain</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 p-2 bg-orange-50 rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-orange-600" />
+                    <span className="text-xs font-medium text-orange-800">NFT Minting</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-wrap justify-center gap-3">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => window.open('https://youtu.be/2xGYbO9PzJM?si=gfPu5p6JerG2by0M', '_blank')}
+                  className="hover:scale-105 transition-transform border-blue-300 hover:border-blue-400"
+                >
+                  📺 Watch on YouTube
+                </Button>
+                <Button 
+                  size="lg"
+                  onClick={() => window.location.href = '/'}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:scale-105 transition-transform shadow-lg"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Try It Now
+                </Button>
+              </div>
+              
+              {/* Video Stats */}
+              <div className="flex justify-center gap-6 text-xs text-gray-500 pt-2">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span>Real-time demo</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span>Live blockchain</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                  <span>Full UI walkthrough</span>
+                </div>
               </div>
             </div>
           </div>

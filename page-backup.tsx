@@ -222,17 +222,100 @@ export default function GeneratePage() {
         return;
     }
 
-    if (!isBrowser || !window.ethereum) {
-        toast({
-            variant: "destructive",
-            title: "MetaMask not found",
-            description: "Please ensure MetaMask is installed and active.",
-        });
-        return;
-    }
-
     setIsMinting(true);
     setLastMintTx(null);
+    
+    try {
+        setMintingStep("Step 1/3: Preparing Artwork...");
+        // Upload image to get a stable URL
+        const hostedImageUrl = await uploadImageToImgBB(imageUrl);
+
+        setMintingStep("Step 2/3: Creating Metadata...");
+        const metadata = {
+            name: refinedResult?.title || "AIArtify NFT",
+            description: `AI-generated artwork from AIArtify (Demo Mode)`,
+            image: hostedImageUrl,
+            attributes: [
+              { trait_type: "Creator", value: "AIArtify" },
+              { trait_type: "AI Enhanced", value: "Yes" },
+              { trait_type: "Mode", value: "Demo" },
+              { trait_type: "Prompt", value: prompt.substring(0, 100) + "..." }
+            ]
+        };
+        
+        setMintingStep("Step 3/3: Minting NFT (Demo Mode)...");
+        
+        // Use mock minting endpoint
+        console.log('🎭 Using demo minting mode');
+        const response = await fetch('/api/mock-mint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient: walletAddress,
+            tokenURI: JSON.stringify(metadata)
+          })
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Demo minting failed');
+        }
+
+        console.log('✅ Demo mint successful:', result);
+
+        // Store NFT metadata locally
+        const nftMetadata = {
+          tokenId: result.tokenId.toString(),
+          name: metadata.name,
+          description: metadata.description,
+          image: metadata.image,
+          originalPrompt: prompt,
+          refinedPrompt: refinedResult?.refinedPrompt || prompt,
+          txHash: result.transactionHash,
+          contractAddress: result.contractAddress,
+          minted: new Date().toISOString(),
+          mode: "demo"
+        };
+        
+        const existingNFTs = JSON.parse(localStorage.getItem('aiartifyNFTs') || '[]');
+        existingNFTs.push(nftMetadata);
+        localStorage.setItem('aiartifyNFTs', JSON.stringify(existingNFTs));
+
+        setLastMintTx(result.transactionHash);
+
+        toast({
+            title: "🎉 NFT Minted Successfully! (Demo)",
+            description: "Your artwork has been created in demo mode. Deploy a real contract for blockchain minting.",
+            action: (
+              <div className="flex w-full flex-col gap-2 sm:flex-row">
+                <Button variant="outline" size="sm" onClick={() => handleCopy(result.transactionHash)}>
+                  <Copy className="mr-2" /> Copy ID
+                </Button>
+                <ToastAction altText="View Details" asChild>
+                  <Link href="#" onClick={(e) => { e.preventDefault(); console.log('Demo NFT:', nftMetadata); }}>
+                    View Details
+                  </Link>
+                </ToastAction>
+              </div>
+            ),
+            duration: 10000,
+        });
+
+    } catch (error: any) {
+        console.error("❌ Error in demo minting:", error);
+        
+        toast({
+            variant: "destructive",
+            title: "Demo Minting Failed",
+            description: error.message || "An error occurred during demo minting.",
+            duration: 8000,
+        });
+    } finally {
+        setIsMinting(false);
+        setMintingStep("");
+    }
+  }
     
     try {
         setMintingStep("Step 1/3: Preparing Artwork...");
@@ -247,50 +330,52 @@ export default function GeneratePage() {
             attributes: [
               {
                 trait_type: "Original Prompt",
-                value: prompt, // This is the final prompt used for generation
+                value: prompt.substring(0, 200), // Limit length
               },
               {
-                trait_type: "Refined Prompt",
-                value: refinedResult?.refinedPrompt || prompt,
+                trait_type: "Refined Prompt", 
+                value: (refinedResult?.refinedPrompt || prompt).substring(0, 200),
               },
               {
-                trait_type: "Alith's Reasoning",
-                value: refinedResult?.reasoning || "N/A",
-              },
-              // BONUS TRACK: Store LazAI reasoning in NFT metadata
-              {
-                trait_type: "LazAI Reasoning",
-                value: refinedResult?.lazaiReasoning || "Not available",
+                trait_type: "Creator",
+                value: "AIArtify"
               },
               {
-                trait_type: "LazAI Model",
-                value: refinedResult?.lazaiModel || "N/A",
-              },
-              {
-                trait_type: "LazAI Confidence",
-                value: refinedResult?.lazaiConfidence?.toString() || "N/A",
-              },
-              {
-                trait_type: "LazAI Transaction",
-                value: refinedResult?.lazaiTxHash || "N/A",
+                trait_type: "AI Enhanced",
+                value: "Yes"
               }
             ]
         };
 
-        // Encode the metadata to a Base64 data URI
-        const metadataJson = JSON.stringify(metadata);
+        // Store metadata externally using IPFS or create a shorter tokenURI
+        setMintingStep("Step 2/3: Preparing metadata...");
+        let tokenURI: string;
+        
+        // Create a much simpler metadata object to avoid size limits
+        const simpleMetadata = {
+          name: metadata.name,
+          description: metadata.description.substring(0, 100) + "...",
+          image: hostedImageUrl,
+          attributes: [
+            { trait_type: "Creator", value: "AIArtify" },
+            { trait_type: "AI Enhanced", value: "Yes" },
+            { trait_type: "Prompt", value: prompt.substring(0, 100) + "..." }
+          ]
+        };
+        
+        const metadataJson = JSON.stringify(simpleMetadata);
         const base64Metadata = Buffer.from(metadataJson).toString('base64');
-        const tokenURI = `data:application/json;base64,${base64Metadata}`;
+        tokenURI = `data:application/json;base64,${base64Metadata}`;
         
         // Debug: Log the metadata and tokenURI we're about to send
         console.log('=== MINTING DEBUG ===');
-        console.log('Metadata object:', metadata);
+        console.log('Metadata object:', simpleMetadata);
         console.log('Metadata JSON:', metadataJson);
         console.log('Base64 metadata length:', base64Metadata.length);
         console.log('TokenURI length:', tokenURI.length);
         console.log('TokenURI preview:', tokenURI.substring(0, 100) + '...');
         
-        setMintingStep("Step 3/3: Minting in your wallet...");
+        setMintingStep("Step 3/3: Minting NFT...");
 
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
@@ -303,58 +388,97 @@ export default function GeneratePage() {
           console.log('Contract name:', testCall);
         } catch (testError) {
           console.error('Contract test call failed:', testError);
+          // Continue anyway - the test call failure doesn't mean minting will fail
         }
         
-        // We no longer need to estimate gas manually if the transaction is simple
-        console.log('Calling mintNFT with params:', { to: walletAddress, tokenURI: tokenURI.substring(0, 50) + '...' });
+        console.log('Calling mintNFT with params:', { 
+          to: walletAddress, 
+          tokenURI: tokenURI.length > 50 ? tokenURI.substring(0, 50) + '...' : tokenURI 
+        });
         
         // Enhanced gas estimation and transaction handling
         let transaction;
         try {
-          // First check if we can estimate gas
-          console.log('Estimating gas for transaction...');
-          const gasEstimate = await contract.mintNFT.estimateGas(walletAddress, tokenURI);
-          console.log('Gas estimate:', gasEstimate.toString());
-          
-          // Add some buffer to the gas estimate (20% more)
-          const gasLimit = gasEstimate * BigInt(120) / BigInt(100);
-          console.log('Gas limit with buffer:', gasLimit.toString());
-          
-          // Execute the transaction with proper gas settings
+          // First try with a reasonable fixed gas limit to avoid estimation issues
+          console.log('Attempting mint with standard gas limit...');
           transaction = await contract.mintNFT(walletAddress, tokenURI, {
-            gasLimit: gasLimit,
+            gasLimit: 300000, // Conservative gas limit for NFT minting
           });
           
-          console.log('Transaction submitted:', transaction.hash);
-        } catch (gasError: any) {
-          console.warn('Gas estimation failed, trying with fallback gas:', gasError.message);
+          console.log('✅ Transaction submitted:', transaction.hash);
+        } catch (firstError: any) {
+          console.warn('⚠️ First attempt failed:', firstError.message);
           
-          // Fallback: try without gas estimation but with a reasonable gas limit
+          // Check if it's a user rejection
+          if (firstError.code === 'ACTION_REJECTED' || firstError.code === 4001) {
+            throw new Error('Transaction rejected by user');
+          }
+          
+          // Try with gas estimation if fixed gas failed
           try {
+            console.log('Trying with gas estimation...');
+            const gasEstimate = await contract.mintNFT.estimateGas(walletAddress, tokenURI);
+            console.log('Gas estimate:', gasEstimate.toString());
+            
+            // Add 20% buffer to gas estimate
+            const gasLimit = gasEstimate * BigInt(120) / BigInt(100);
+            console.log('Gas limit with buffer:', gasLimit.toString());
+            
             transaction = await contract.mintNFT(walletAddress, tokenURI, {
-              gasLimit: 500000, // 500k gas should be enough for most NFT mints
+              gasLimit: gasLimit,
             });
             
-            console.log('Transaction submitted with fallback gas:', transaction.hash);
-          } catch (fallbackError: any) {
-            console.warn('Fallback gas failed, trying without gas limit:', fallbackError.message);
+            console.log('✅ Transaction submitted with estimated gas:', transaction.hash);
+          } catch (secondError: any) {
+            console.warn('⚠️ Gas estimation failed:', secondError.message);
             
-            // Final fallback: let the provider handle gas estimation
-            transaction = await contract.mintNFT(walletAddress, tokenURI);
-            console.log('Transaction submitted without gas limit:', transaction.hash);
+            // Check if it's a user rejection
+            if (secondError.code === 'ACTION_REJECTED' || secondError.code === 4001) {
+              throw new Error('Transaction rejected by user');
+            }
+            
+            // Final fallback: let provider handle everything
+            try {
+              console.log('Final attempt: letting provider handle gas...');
+              transaction = await contract.mintNFT(walletAddress, tokenURI);
+              console.log('✅ Transaction submitted with provider gas:', transaction.hash);
+            } catch (finalError: any) {
+              console.error('❌ All attempts failed:', finalError);
+              
+              // Check if it's a user rejection
+              if (finalError.code === 'ACTION_REJECTED' || finalError.code === 4001) {
+                throw new Error('Transaction rejected by user');
+              }
+              
+              // Provide more specific error message based on the error
+              if (finalError.message?.includes('execution reverted')) {
+                throw new Error('Contract execution failed. The contract may have restrictions or the tokenURI may be invalid.');
+              } else if (finalError.message?.includes('insufficient funds')) {
+                throw new Error('Insufficient funds for transaction. Please check your METIS balance.');
+              } else {
+                throw new Error(`Minting failed: ${finalError.message || 'Unknown error'}`);
+              }
+            }
           }
         }
         
         setMintingStep("Waiting for blockchain confirmation...");
+        console.log('⏳ Waiting for transaction confirmation...');
 
         const receipt = await transaction.wait();
         
         if (!receipt) {
           throw new Error("Transaction receipt is null");
         }
+        
+        if (receipt.status !== 1) {
+          throw new Error(`Transaction failed with status: ${receipt.status}`);
+        }
 
-        console.log('=== POST-MINT VERIFICATION ===');
-        console.log('Transaction receipt:', receipt);
+        console.log('=== MINT SUCCESS ===');
+        console.log('✅ Transaction confirmed:', receipt.hash);
+        console.log('📊 Gas used:', receipt.gasUsed.toString());
+        console.log('💰 Gas price:', receipt.gasPrice.toString());
         
         // Extract token ID from the receipt
         let tokenId: bigint | null = null;
@@ -447,12 +571,43 @@ export default function GeneratePage() {
         });
 
     } catch (error: any) {
-        console.error("Error minting NFT:", error);
-        const errorMessage = error.reason || error.message || "An unexpected error occurred during minting.";
+        console.error("❌ Error minting NFT:", error);
+        
+        let errorMessage = "An unexpected error occurred during minting.";
+        let errorTitle = "Minting Failed";
+        
+        // Provide specific error messages based on error type
+        if (error.message?.includes('rejected by user') || error.message?.includes('User denied')) {
+          errorTitle = "Transaction Cancelled";
+          errorMessage = "You cancelled the transaction. No charges were made.";
+        } else if (error.message?.includes('insufficient funds')) {
+          errorTitle = "Insufficient Funds";
+          errorMessage = "You don't have enough METIS to complete this transaction. Please add funds to your wallet.";
+        } else if (error.message?.includes('execution reverted')) {
+          errorTitle = "Contract Error";
+          errorMessage = "The smart contract rejected the transaction. This might be due to contract restrictions or network issues.";
+        } else if (error.message?.includes('network')) {
+          errorTitle = "Network Error";
+          errorMessage = "There was a network connection issue. Please check your internet and try again.";
+        } else if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+          errorTitle = "Transaction Cancelled";
+          errorMessage = "Transaction was cancelled by user.";
+        } else {
+          // Use the original error message but clean it up
+          errorMessage = error.reason || error.message || errorMessage;
+          
+          // Clean up common error prefixes
+          errorMessage = errorMessage
+            .replace(/^Error: /, '')
+            .replace(/^execution reverted: /, '')
+            .replace(/^MetaMask Tx Signature: /, '');
+        }
+        
         toast({
             variant: "destructive",
-            title: "Minting Failed",
-            description: errorMessage.length > 100 ? `${errorMessage.substring(0, 100)}...` : errorMessage,
+            title: errorTitle,
+            description: errorMessage.length > 150 ? `${errorMessage.substring(0, 150)}...` : errorMessage,
+            duration: 8000,
         });
     } finally {
         setIsMinting(false);
@@ -642,62 +797,3 @@ export default function GeneratePage() {
     </div>
   );
 }
-
-Plan:
-Based on your complete project summary and the hackathon’s new update, here’s what you should do next to make AIArtify a grand prize contender:
-
-1️⃣ Add “External Artwork Minting” Feature (Direct feedback from Ops Guild Insider)
-Let users upload their own images (JPG/PNG/WebP) or paste an image URL.
-
-Pass it through LazAI reasoning for quality scoring and metadata generation.
-
-Allow minting even if art wasn’t generated inside AIArtify.
-
-This:
-
-Addresses the exact feature request she mentioned.
-
-Expands your user base beyond AI-only creators.
-
-Positions AIArtify as a universal NFT minting tool.
-
-2️⃣ Deepen LazAI + Hyperion Bonus Track Integration
-You’ve already nailed the basics — now go for over-delivery:
-
-Multi-node Hyperion reasoning consensus: Run reasoning through multiple nodes, store each node’s proof hash, and display them in the NFT metadata.
-
-On-chain quality score history: Each minted NFT stores LazAI’s score + reasoning so collectors can verify why it’s “premium.”
-
-Comparison View in Gallery: Side-by-side of LazAI reasoning vs. “no reasoning” version for educational & wow factor.
-
-3️⃣ Mobile Optimization & PWA
-Her comment hints the mobile version isn’t fully available.
-
-Make AIArtify a Progressive Web App:
-
-Offline mode for browsing gallery.
-
-“Add to Home Screen” prompt.
-
-Mobile-friendly wallet connect.
-
-Judges love accessibility — this checks that box.
-
-4️⃣ Collaboration Hooks (Festify + Vibesflow)
-With Festify: Let events or festivals mint themed NFT art via AIArtify’s API.
-
-With Vibesflow: Integrate an “Audio + Visual NFT” mode (AI-generated art + user-uploaded audio).
-
-Even if you don’t finish the full integration, showing in roadmap & partial API stubs signals huge potential.
-
-5️⃣ Judging Criteria Focus
-Hackathon Judging for Bonus Track:
-
-Functionality (35%) → External art minting + advanced reasoning = more utility.
-
-Code Quality (25%) → Document integrations, add type-safe tests for new flows.
-
-User Experience (25%) → Polished mobile UX + onboarding for new features.
-
-Innovation (15%) → Multi-node reasoning + cross-project collabs = unique edge.
-

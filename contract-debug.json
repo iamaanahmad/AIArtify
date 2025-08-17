@@ -1,0 +1,71 @@
+﻿{
+    "success":  true,
+    "debug":  {
+                  "contractAddress":  "0x401fab91bde961cfcac8c54f5466ab39c7203803",
+                  "testType":  "minting",
+                  "timestamp":  "2025-08-09T16:03:32.844Z",
+                  "network":  {
+                                  "name":  "unknown",
+                                  "chainId":  "1088"
+                              },
+                  "tests":  {
+                                "contractExists":  {
+                                                       "success":  false,
+                                                       "codeLength":  2
+                                                   },
+                                "nameCall":  {
+                                                 "success":  false,
+                                                 "error":  "could not decode result data (value=\"0x\", info={ \"method\": \"name\", \"signature\": \"name()\" }, code=BAD_DATA, version=6.15.0)",
+                                                 "code":  "BAD_DATA"
+                                             },
+                                "symbolCall":  {
+                                                   "success":  false,
+                                                   "error":  "could not decode result data (value=\"0x\", info={ \"method\": \"symbol\", \"signature\": \"symbol()\" }, code=BAD_DATA, version=6.15.0)",
+                                                   "code":  "BAD_DATA"
+                                               },
+                                "ownerCall":  {
+                                                  "success":  false,
+                                                  "error":  "could not decode result data (value=\"0x\", info={ \"method\": \"owner\", \"signature\": \"owner()\" }, code=BAD_DATA, version=6.15.0)",
+                                                  "code":  "BAD_DATA"
+                                              },
+                                "mintNFTFunction":  {
+                                                        "success":  true,
+                                                        "signature":  "mintNFT(address,string)",
+                                                        "inputs":  [
+                                                                       {
+                                                                           "name":  "recipient",
+                                                                           "type":  "address"
+                                                                       },
+                                                                       {
+                                                                           "name":  "tokenURI",
+                                                                           "type":  "string"
+                                                                       }
+                                                                   ],
+                                                        "outputs":  [
+                                                                        {
+                                                                            "name":  "",
+                                                                            "type":  "uint256"
+                                                                        }
+                                                                    ]
+                                                    },
+                                "mintNFTSimulation":  {
+                                                          "success":  false,
+                                                          "error":  "could not decode result data (value=\"0x\", info={ \"method\": \"mintNFT\", \"signature\": \"mintNFT(address,string)\" }, code=BAD_DATA, version=6.15.0)",
+                                                          "code":  "BAD_DATA",
+                                                          "note":  "This error explains why minting fails"
+                                                      },
+                                "accessControl":  {
+                                                      "errorType":  "BAD_DATA",
+                                                      "errorMessage":  "could not decode result data (value=\"0x\", info={ \"method\": \"mintNFT\", \"signature\": \"mintNFT(address,string)\" }, code=BAD_DATA, version=6.15.0)",
+                                                      "note":  "Analyzing error type to understand restrictions"
+                                                  },
+                                "recentMints":  {
+                                                    "success":  true,
+                                                    "count":  0,
+                                                    "lastMints":  [
+
+                                                                  ]
+                                                }
+                            }
+              }
+}

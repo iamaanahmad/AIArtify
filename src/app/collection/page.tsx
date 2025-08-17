@@ -8,13 +8,21 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { useWallet } from "@/hooks/use-wallet";
 import { contractConfig } from "@/lib/web3/config";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Wallet } from "lucide-react";
+import { Wallet, Grid, List, Filter, Plus, BarChart3, Share2 } from "lucide-react";
 import { getRpcProvider, safeContractCall, queryEventsInChunks, tokenExists, getTokenMetadata } from "@/lib/web3/utils";
 import { getNftsForWallet, getNftByTokenId, storeNftMetadata } from "@/lib/nft-storage";
 import { recoverNftMetadataFromTx } from "@/lib/metadata-recovery";
+import { useCollections, collectionTemplates } from "@/lib/collection-manager";
+import { type ArtworkItem, type ArtCollection } from "@/lib/collection-manager";
+import AnalyticsDashboard from "@/components/analytics-dashboard";
+import ConsensusBreakdown from "@/components/consensus-breakdown";
+import LazAIVerification from "@/components/lazai-verification";
+import { useToast } from "@/hooks/use-toast";
 
 interface NftMetadata {
   name: string;
@@ -36,6 +44,23 @@ export default function CollectionPage() {
   const [nfts, setNfts] = useState<NftData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  
+  // Phase 4: Collection Management State
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [currentView, setCurrentView] = useState<'nfts' | 'collections' | 'analytics'>('nfts');
+  const [collections, setCollections] = useState<ArtCollection[]>([]);
+  const [unassignedArtworks, setUnassignedArtworks] = useState<ArtworkItem[]>([]);
+  const [selectedArtworks, setSelectedArtworks] = useState<Set<string>>(new Set());
+  
+  const { 
+    getCollections, 
+    getArtworks, 
+    getUnassignedArtworks,
+    getSuggestedCollections,
+    createCollection,
+    createCustomCollection 
+  } = useCollections();
 
   const fetchNfts = useCallback(async (address: string) => {
     if (process.env.NODE_ENV === 'development') {
@@ -328,10 +353,94 @@ export default function CollectionPage() {
   useEffect(() => {
     if (walletAddress) {
       fetchNfts(walletAddress);
+      // Phase 4: Load collections and artworks
+      loadCollectionData();
     } else {
       setIsLoading(false); // Not loading if there's no wallet
     }
   }, [walletAddress, fetchNfts]);
+  
+  // Phase 4: Load collection management data
+  const loadCollectionData = () => {
+    try {
+      const allCollections = getCollections();
+      const allArtworks = getArtworks();
+      const unassigned = getUnassignedArtworks();
+      
+      setCollections(allCollections);
+      setUnassignedArtworks(unassigned);
+      
+      console.log('📊 Collection data loaded:', {
+        collections: allCollections.length,
+        artworks: allArtworks.length,
+        unassigned: unassigned.length
+      });
+    } catch (error) {
+      console.error('Failed to load collection data:', error);
+    }
+  };
+  
+  // Phase 4: Handle artwork selection for collection creation
+  const toggleArtworkSelection = (artworkId: string) => {
+    const newSelection = new Set(selectedArtworks);
+    if (newSelection.has(artworkId)) {
+      newSelection.delete(artworkId);
+    } else {
+      newSelection.add(artworkId);
+    }
+    setSelectedArtworks(newSelection);
+  };
+  
+  // Phase 4: Create collection from selected artworks
+  const handleCreateCollection = (templateIndex?: number) => {
+    if (selectedArtworks.size === 0) {
+      toast({
+        variant: "destructive",
+        title: "No artworks selected",
+        description: "Please select artworks to create a collection.",
+      });
+      return;
+    }
+    
+    const selectedIds = Array.from(selectedArtworks);
+    
+    if (templateIndex !== undefined) {
+      const template = collectionTemplates[templateIndex];
+      if (selectedIds.length < template.minArtworks) {
+        toast({
+          variant: "destructive",
+          title: "Not enough artworks",
+          description: `This template requires at least ${template.minArtworks} artworks.`,
+        });
+        return;
+      }
+      
+      const collectionId = createCollection(template, selectedIds);
+      toast({
+        title: "🎨 Collection Created!",
+        description: `${template.name} collection created with ${selectedIds.length} artworks.`,
+        duration: 4000,
+      });
+    } else {
+      // Create custom collection
+      const collectionId = createCustomCollection(
+        `Custom Collection ${collections.length + 1}`,
+        `A curated collection of ${selectedIds.length} artworks`,
+        'custom',
+        selectedIds,
+        ['curated', 'custom']
+      );
+      
+      toast({
+        title: "🎨 Custom Collection Created!",
+        description: `Collection created with ${selectedIds.length} artworks.`,
+        duration: 4000,
+      });
+    }
+    
+    setSelectedArtworks(new Set());
+    loadCollectionData();
+  };
 
   if (!walletAddress) {
       return (
@@ -398,16 +507,25 @@ export default function CollectionPage() {
             My Collection
           </h1>
           <p className="mt-2 text-lg text-muted-foreground">
-            Here are the unique artworks you've created and minted on the blockchain.
+            Manage your AI artworks, create collections, and view analytics.
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => fetchNfts(walletAddress!)}
-          disabled={isLoading}
-        >
-          {isLoading ? "Loading..." : "Refresh"}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => fetchNfts(walletAddress!)}
+            disabled={isLoading}
+          >
+            {isLoading ? "Loading..." : "Refresh"}
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={loadCollectionData}
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Sync Data
+          </Button>
+        </div>
       </div>
 
       {!isCorrectNetwork && (
@@ -422,49 +540,261 @@ export default function CollectionPage() {
         </Alert>
       )}
 
-      {nfts.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {nfts.map((nft) => (
-            <Card key={nft.id} className="flex flex-col overflow-hidden">
-              <CardContent className="p-0">
-                <Image
-                  src={nft.imageUrl}
-                  alt={nft.title}
-                  width={600}
-                  height={600}
-                  className="aspect-square w-full object-cover transition-transform duration-300 hover:scale-105"
-                  unoptimized
-                />
-              </CardContent>
-              <CardHeader className="flex-grow p-4">
-                <CardTitle className="truncate text-base">{nft.title}</CardTitle>
-                <CardFooter className="p-0 pt-2 text-xs text-muted-foreground">
-                    Token ID: {nft.id}
-                </CardFooter>
+      {/* Phase 4: Enhanced Collection Interface */}
+      <Tabs value={currentView} onValueChange={(value: any) => setCurrentView(value)} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="nfts" className="flex items-center gap-2">
+            <Grid className="w-4 h-4" />
+            NFTs ({nfts.length})
+          </TabsTrigger>
+          <TabsTrigger value="collections" className="flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            Collections ({collections.length})
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Analytics
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="nfts" className="space-y-6">
+          {/* Selection Tools */}
+          {unassignedArtworks.length > 0 && (
+            <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  Create Collection
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Select artworks below to create a themed collection. {selectedArtworks.size} selected.
+                </p>
               </CardHeader>
-              <CardFooter className="flex justify-end p-4 pt-0">
-                {nft.txHash && (
-                     <Button variant="link" size="sm" className="h-auto p-0" asChild>
-                        <Link href={`https://hyperion-testnet-explorer.metisdevops.link/tx/${nft.txHash}`} target="_blank">
-                            View on Explorer
-                        </Link>
+              {selectedArtworks.size > 0 && (
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCreateCollection()}
+                    >
+                      Create Custom Collection
                     </Button>
-                )}
-              </CardFooter>
+                    {collectionTemplates.map((template, index) => (
+                      <Button
+                        key={template.id}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCreateCollection(index)}
+                        disabled={selectedArtworks.size < template.minArtworks}
+                      >
+                        {template.name} ({template.minArtworks}+ works)
+                      </Button>
+                    ))}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedArtworks(new Set())}
+                  >
+                    Clear Selection
+                  </Button>
+                </CardContent>
+              )}
             </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed">
-            <div className="text-center">
+          )}
+
+          {/* View Controls */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
+            {selectedArtworks.size > 0 && (
+              <Badge variant="secondary">
+                {selectedArtworks.size} selected
+              </Badge>
+            )}
+          </div>
+
+          {/* NFTs Grid/List */}
+          {nfts.length > 0 ? (
+            <div className={viewMode === 'grid' 
+              ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              : "space-y-4"
+            }>
+              {nfts.map((nft) => {
+                const isSelected = selectedArtworks.has(nft.id);
+                const isUnassigned = unassignedArtworks.some(artwork => artwork.id === nft.id);
+                
+                return (
+                  <Card 
+                    key={nft.id} 
+                    className={`flex ${viewMode === 'list' ? 'flex-row' : 'flex-col'} overflow-hidden transition-all cursor-pointer ${
+                      isSelected ? 'ring-2 ring-primary' : ''
+                    } ${isUnassigned ? 'hover:ring-1 hover:ring-muted-foreground' : ''}`}
+                    onClick={() => isUnassigned && toggleArtworkSelection(nft.id)}
+                  >
+                    <CardContent className="p-0">
+                      <Image
+                        src={nft.imageUrl}
+                        alt={nft.title}
+                        width={600}
+                        height={600}
+                        className={`${viewMode === 'list' ? 'w-24 h-24' : 'aspect-square w-full'} object-cover transition-transform duration-300 hover:scale-105`}
+                        unoptimized
+                      />
+                    </CardContent>
+                    <div className="flex-1">
+                      <CardHeader className={`flex-grow ${viewMode === 'list' ? 'p-4' : 'p-4'}`}>
+                        <CardTitle className="truncate text-base flex items-center justify-between">
+                          {nft.title}
+                          {isUnassigned && (
+                            <Badge variant="outline" className="text-xs">
+                              Available
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <CardFooter className="p-0 pt-2 text-xs text-muted-foreground">
+                          Token ID: {nft.id}
+                        </CardFooter>
+                      </CardHeader>
+                      <CardFooter className={`flex justify-between ${viewMode === 'list' ? 'p-4' : 'p-4 pt-0'}`}>
+                        <div className="flex gap-2">
+                          {/* Phase 5: LazAI Verification for NFTs */}
+                          <LazAIVerification
+                            artworkId={nft.id}
+                            imageUrl={nft.imageUrl}
+                            prompt={nft.prompt}
+                            onVerified={(result) => {
+                              toast({
+                                title: "🏆 NFT Verified with LazAI!",
+                                description: `Quality Score: ${(result.newScore * 100).toFixed(1)}%`,
+                              });
+                            }}
+                          />
+                        </div>
+                        <div>
+                          {nft.txHash && (
+                            <Button variant="link" size="sm" className="h-auto p-0" asChild>
+                              <Link href={`https://hyperion-testnet-explorer.metisdevops.link/tx/${nft.txHash}`} target="_blank">
+                                View on Explorer
+                              </Link>
+                            </Button>
+                          )}
+                        </div>
+                      </CardFooter>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed">
+              <div className="text-center">
                 <h3 className="text-xl font-semibold">Your collection is empty</h3>
                 <p className="mt-2 text-muted-foreground">Start creating and minting art to build your collection.</p>
                 <Button className="mt-4" asChild>
-                    <Link href="/">Generate Art</Link>
+                  <Link href="/">Generate Art</Link>
                 </Button>
+              </div>
             </div>
-        </div>
-      )}
+          )}
+        </TabsContent>
+
+        <TabsContent value="collections" className="space-y-6">
+          {collections.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {collections.map((collection) => (
+                <Card key={collection.id} className="overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      {collection.name}
+                      <Badge variant="secondary">
+                        {collection.artworks.length} works
+                      </Badge>
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {collection.description}
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {collection.artworks.slice(0, 3).map((artwork, index) => (
+                        <Image
+                          key={artwork.id}
+                          src={artwork.imageUrl}
+                          alt={artwork.title || 'Artwork'}
+                          width={100}
+                          height={100}
+                          className="aspect-square w-full rounded object-cover"
+                          unoptimized
+                        />
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {collection.tags.map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Average Quality:</span>
+                        <span>{(collection.averageQuality * 100).toFixed(1)}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Minted:</span>
+                        <span>{collection.mintedCount}/{collection.artworks.length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Rarity Score:</span>
+                        <span>{collection.rarityScore.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="outline" size="sm" className="w-full">
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Export for Minting
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold">No collections yet</h3>
+                <p className="mt-2 text-muted-foreground">Create your first collection from your NFTs.</p>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <AnalyticsDashboard onRefresh={() => {
+            toast({
+              title: "📊 Analytics Refreshed",
+              description: "Dashboard data has been updated.",
+              duration: 2000,
+            });
+          }} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

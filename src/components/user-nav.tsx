@@ -15,10 +15,37 @@ import { Button } from "./ui/button";
 import { Gem, LifeBuoy, LogOut, User, Wallet } from "lucide-react";
 import { useWallet } from "@/hooks/use-wallet";
 
+function isMobileDevice() {
+  if (typeof window === 'undefined') return false;
+  return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function getDappUrl() {
+  if (typeof window === 'undefined') return '';
+  // Remove protocol for MetaMask deep link
+  return window.location.host + window.location.pathname;
+}
+
 export default function UserNav() {
   const { walletAddress, connectWallet, disconnectWallet } = useWallet();
 
   if (!walletAddress) {
+    // If on mobile and no window.ethereum, show MetaMask deep link
+    const isMobile = isMobileDevice();
+    const hasEthereum = typeof window !== 'undefined' && typeof window.ethereum !== 'undefined';
+    if (isMobile && !hasEthereum) {
+      const dappUrl = encodeURIComponent(getDappUrl());
+      const metamaskLink = `https://metamask.app.link/dapp/${dappUrl}`;
+      return (
+        <a href={metamaskLink} target="_blank" rel="noopener noreferrer">
+          <Button>
+            <Wallet className="mr-0 sm:mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Open in MetaMask App</span>
+          </Button>
+        </a>
+      );
+    }
+    // Otherwise, show normal connect button
     return (
       <Button onClick={connectWallet}>
         <Wallet className="mr-0 sm:mr-2 h-4 w-4" />

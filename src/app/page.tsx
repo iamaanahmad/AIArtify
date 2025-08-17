@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState } from "react";
-import { Copy, Sparkles, Wand2, CheckCircle } from "lucide-react";
+import { Copy, Sparkles, Wand2, CheckCircle, Upload, ImageIcon, Zap, BarChart3 } from "lucide-react";
 import Image from "next/image";
 import { ethers } from "ethers";
 import axios from "axios";
@@ -12,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { contractConfig } from "@/lib/web3/config";
@@ -19,6 +21,14 @@ import { storeNftMetadata } from "@/lib/nft-storage";
 import { useWallet } from "@/hooks/use-wallet";
 import Link from "next/link";
 import { ToastAction } from "@/components/ui/toast";
+import ExternalArtUpload from "@/components/external-art-upload";
+import SocialShare from "@/components/social-share";
+import AnalyticsDashboard from "@/components/analytics-dashboard";
+import LazAIVerification from "@/components/lazai-verification";
+import ConsensusBreakdown from "@/components/consensus-breakdown";
+import { useAnalytics } from "@/lib/analytics";
+import { useCollections } from "@/lib/collection-manager";
+import { type SocialShareData } from "@/lib/social-integration";
 
 export default function GeneratePage() {
   const [prompt, setPrompt] = useState<string>("A majestic lion with a crown of stars, in a cosmic nebula, hyperrealistic, 4k");
@@ -29,13 +39,30 @@ export default function GeneratePage() {
   const [isMinting, setIsMinting] = useState(false);
   const [mintingStep, setMintingStep] = useState("");
   const [lastMintTx, setLastMintTx] = useState<string | null>(null);
+  
+  // Enhanced generation state
+  const [qualityLevel, setQualityLevel] = useState<'standard' | 'high' | 'premium'>('standard');
+  
+  // External art state
+  const [externalImageData, setExternalImageData] = useState<string | null>(null);
+  const [externalMetadata, setExternalMetadata] = useState<any>(null);
+  const [currentTab, setCurrentTab] = useState('generate');
+  
   // BONUS TRACK: Enhanced UX states for LazAI integration
   const [lazaiProcessing, setLazaiProcessing] = useState(false);
   const [lazaiStep, setLazaiStep] = useState("");
+  
+  // Phase 4: Advanced Features
+  const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [processingStartTime, setProcessingStartTime] = useState<number>(0);
 
   const { walletAddress, connectWallet, isBrowser, isCorrectNetwork, switchToMetisNetwork } = useWallet();
-
   const { toast } = useToast();
+  
+  // Phase 4: Analytics and Collections
+  const { trackGeneration, updateGeneration, trackSocialShare } = useAnalytics();
+  const { addArtwork, updateArtwork } = useCollections();
 
   // Simple markdown processing function for AI reasoning text
   const processMarkdown = (text: string): JSX.Element[] => {
@@ -63,8 +90,38 @@ export default function GeneratePage() {
     setImageUrl(null);
     setLastMintTx(null);
     setMintingStep("");
+    setExternalImageData(null);
+    setExternalMetadata(null);
+    setCurrentTab('generate');
+    setCurrentGenerationId(null);
     setPrompt("A new masterpiece, a futuristic city floating in the clouds, detailed, 4k");
   }
+  
+  // Phase 4: Prepare social share data
+  const shareData: SocialShareData | null = imageUrl ? {
+    imageUrl,
+    title: refinedResult?.title || externalMetadata?.analysisResult?.suggestedTitle || `AI Art - ${new Date().toLocaleDateString()}`,
+    description: refinedResult?.reasoning || externalMetadata?.analysisResult?.enhancedDescription || `Created with AIArtify using prompt: "${prompt}"`,
+    prompt,
+    qualityScore: externalMetadata?.analysisResult?.qualityScore,
+    mintTxHash: lastMintTx || undefined,
+    chainData: lastMintTx ? {
+      network: 'Metis Hyperion Testnet',
+      contractAddress: contractConfig.address
+    } : undefined
+  } : null;
+  
+  // Handle social share tracking
+  const handleSocialShare = (platform: string) => {
+    if (currentGenerationId) {
+      trackSocialShare(currentGenerationId);
+    }
+    toast({
+      title: `📱 Shared to ${platform}!`,
+      description: "Your artwork has been shared successfully.",
+      duration: 2000,
+    });
+  };
 
   const handleRefinePrompt = async () => {
     if (!prompt) {
@@ -140,13 +197,27 @@ export default function GeneratePage() {
     setIsGenerating(true);
     setImageUrl(null);
     setLastMintTx(null);
+    setProcessingStartTime(Date.now());
+    
     try {
-      const response = await fetch('/api/generate-art', {
+      // Use enhanced generation API for high/premium quality
+      const apiEndpoint = qualityLevel === 'standard' ? '/api/generate-art' : '/api/enhanced-generate-art';
+      
+      const requestBody = qualityLevel === 'standard' 
+        ? { prompt }
+        : { 
+            prompt, 
+            qualityLevel,
+            enhancePrompt: qualityLevel === 'high' || qualityLevel === 'premium',
+            validateResult: qualityLevel === 'premium'
+          };
+      
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify(requestBody),
       });
       
       if (!response.ok) {
@@ -155,6 +226,51 @@ export default function GeneratePage() {
       
       const result = await response.json();
       setImageUrl(result.imageUrl);
+      
+      // Phase 4: Track generation with analytics
+      const processingTime = Date.now() - processingStartTime;
+      const generationId = trackGeneration({
+        prompt,
+        promptLength: prompt.length,
+        qualityLevel,
+        qualityScore: result.performance?.qualityScore,
+        consensusNodes: result.performance?.consensusNodes,
+        processingTime,
+        enhancedPrompt: result.enhancedPrompt || refinedResult?.refinedPrompt,
+        lazaiReasoning: refinedResult?.lazaiReasoning,
+        mintStatus: 'pending',
+        socialShares: 0
+      });
+      
+      setCurrentGenerationId(generationId);
+      
+      // Add to collection manager
+      addArtwork({
+        imageUrl: result.imageUrl,
+        prompt,
+        title: refinedResult?.title || `AI Art - ${new Date().toLocaleDateString()}`,
+        description: result.enhancedDescription || `Generated with ${qualityLevel} quality using advanced AI`,
+        qualityScore: result.performance?.qualityScore,
+        qualityLevel,
+        enhancedPrompt: result.enhancedPrompt || refinedResult?.refinedPrompt,
+        lazaiReasoning: refinedResult?.lazaiReasoning,
+        consensusNodes: result.performance?.consensusNodes,
+        metadata: {
+          processingTime,
+          timestamp: Date.now(),
+          refinedResult,
+          performance: result.performance
+        }
+      });
+      
+      // Show enhanced generation results if available
+      if (result.performance && qualityLevel !== 'standard') {
+        toast({
+          title: "🎨 Enhanced AI Generation Complete!",
+          description: `Quality: ${(result.performance.qualityScore * 100).toFixed(1)}% | Confidence: ${(result.performance.confidence * 100).toFixed(1)}% | Nodes: ${result.performance.consensusNodes}`,
+          duration: 5000,
+        });
+      }
     } catch (error) {
       console.error("Error generating art:", error);
       toast({
@@ -165,6 +281,23 @@ export default function GeneratePage() {
     } finally {
       setIsGenerating(false);
     }
+  };
+  
+  // External art handlers
+  const handleExternalImageSelected = (imageData: string, metadata: any) => {
+    setExternalImageData(imageData);
+    setExternalMetadata(metadata);
+    setImageUrl(imageData); // Set as current image for minting
+    
+    // Extract quality score from analysis result
+    const qualityScore = metadata.analysisResult?.qualityScore || 0.8;
+    const description = metadata.analysisResult?.enhancedDescription || metadata.userDescription || 'Analysis complete';
+    
+    toast({
+      title: "🎨 External Art Uploaded!",
+      description: `Quality Score: ${(qualityScore * 100).toFixed(1)}% | ${description}`,
+      duration: 4000,
+    });
   };
   
   const handleCopy = (text: string) => {
@@ -241,8 +374,8 @@ export default function GeneratePage() {
 
         setMintingStep("Step 2/3: Creating On-Chain Metadata...");
         const metadata = {
-            name: refinedResult?.title || "AIArtify NFT",
-            description: `An AI-generated artwork from AIArtify, enhanced with LazAI reasoning.`,
+            name: refinedResult?.title || externalMetadata?.title || "AIArtify NFT",
+            description: externalMetadata?.description || `An AI-generated artwork from AIArtify, enhanced with LazAI reasoning.`,
             image: hostedImageUrl, // Use the public URL from the image host
             attributes: [
               {
@@ -273,7 +406,35 @@ export default function GeneratePage() {
               {
                 trait_type: "LazAI Transaction",
                 value: refinedResult?.lazaiTxHash || "N/A",
-              }
+              },
+              // External art metadata
+              ...(externalMetadata ? [
+                {
+                  trait_type: "Art Type",
+                  value: "External Upload",
+                },
+                {
+                  trait_type: "Quality Score",
+                  value: ((externalMetadata.analysisResult?.qualityScore || 0.8) * 100).toFixed(1) + "%",
+                },
+                {
+                  trait_type: "LazAI Analysis",
+                  value: externalMetadata.analysisResult?.lazaiReasoning || "N/A",
+                },
+                {
+                  trait_type: "Original Source",
+                  value: externalMetadata.source === 'upload' ? 'File Upload' : 'URL',
+                },
+                {
+                  trait_type: "Original Name",
+                  value: externalMetadata.originalName || externalMetadata.originalUrl || "N/A",
+                }
+              ] : [
+                {
+                  trait_type: "Art Type",
+                  value: "AI Generated",
+                }
+              ])
             ]
         };
 
@@ -428,6 +589,20 @@ export default function GeneratePage() {
 
         setLastMintTx(receipt.hash);
 
+        // Phase 4: Update analytics and collection tracking
+        if (currentGenerationId) {
+          updateGeneration(currentGenerationId, {
+            mintStatus: 'minted',
+            mintTxHash: receipt.hash
+          });
+        }
+
+        // Update artwork in collections
+        updateArtwork(currentGenerationId || 'unknown', {
+          mintTxHash: receipt.hash,
+          tokenId: tokenId?.toString()
+        });
+
         toast({
             title: "🎉 NFT Minted Successfully!",
             description: "Your artwork is now a permanent part of the blockchain.",
@@ -448,6 +623,14 @@ export default function GeneratePage() {
 
     } catch (error: any) {
         console.error("Error minting NFT:", error);
+        
+        // Phase 4: Track failed mint
+        if (currentGenerationId) {
+          updateGeneration(currentGenerationId, {
+            mintStatus: 'failed'
+          });
+        }
+        
         const errorMessage = error.reason || error.message || "An unexpected error occurred during minting.";
         toast({
             variant: "destructive",
@@ -468,8 +651,19 @@ export default function GeneratePage() {
             Create with AI
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
-            Bring your imagination to life. Describe anything, and our AI will create a unique piece of art for you.
+            Bring your imagination to life. Generate AI art or upload external artwork to mint as NFTs.
           </p>
+          <div className="mt-4 flex justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAnalytics(!showAnalytics)}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              {showAnalytics ? 'Hide Analytics' : 'View Analytics'}
+            </Button>
+          </div>
         </div>
 
         {walletAddress && !isCorrectNetwork && (
@@ -484,43 +678,141 @@ export default function GeneratePage() {
           </Alert>
         )}
 
+        {/* Phase 4: Analytics Dashboard */}
+        {showAnalytics && (
+          <div className="space-y-4">
+            <AnalyticsDashboard onRefresh={() => {
+              toast({
+                title: "📊 Analytics Refreshed",
+                description: "Dashboard data has been updated.",
+                duration: 2000,
+              });
+            }} />
+          </div>
+        )}
+
         <Card>
           <CardHeader>
-            <CardTitle>1. Describe Your Vision</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5" />
+              Create Your NFT Art
+            </CardTitle>
             <CardDescription>
-              Enter a detailed prompt. The more specific you are, the better the result.
+              Choose how you want to create your unique NFT artwork
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Textarea
-              placeholder="e.g., A majestic lion with a crown of stars, in a cosmic nebula, hyperrealistic, 4k"
-              className="min-h-[120px] resize-none"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              disabled={isCtaDisabled || !!lastMintTx}
-            />
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button onClick={handleRefinePrompt} disabled={isCtaDisabled || !!lastMintTx}>
-                <Sparkles className="mr-2" />
-                {isRefining ? "Refining with Alith..." : "Refine with Alith"}
-              </Button>
-              <Button onClick={handleGenerateArt} disabled={isGenerateDisabled || !!lastMintTx} className="w-full sm:w-auto flex-1 bg-accent text-accent-foreground hover:bg-accent/90">
-                <Wand2 className="mr-2" />
-                {isGenerating ? "Generating Art..." : "Generate Art"}
-              </Button>
-            </div>
-            
-            {/* BONUS TRACK: LazAI Processing Indicator */}
-            {lazaiProcessing && lazaiStep && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                <div className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+          <CardContent>
+            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="generate" className="flex items-center gap-2">
+                  <Wand2 className="w-4 h-4" />
+                  Generate with AI
+                </TabsTrigger>
+                <TabsTrigger value="upload" className="flex items-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  Upload External Art
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="generate" className="space-y-4 mt-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Describe Your Vision
+                    </label>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Enter a detailed prompt. The more specific you are, the better the result.
+                    </p>
+                    <Textarea
+                      placeholder="e.g., A majestic lion with a crown of stars, in a cosmic nebula, hyperrealistic, 4k"
+                      className="min-h-[120px] resize-none"
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      disabled={isCtaDisabled || !!lastMintTx}
+                    />
+                  </div>
+                  
+                  {/* Enhanced Generation Quality Selector */}
+                  <div className="flex items-center gap-3 p-3 border rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-purple-600" />
+                      <span className="text-sm font-medium">AI Quality:</span>
+                    </div>
+                    <Select value={qualityLevel} onValueChange={(value: 'standard' | 'high' | 'premium') => setQualityLevel(value)}>
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            Standard
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="high">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                            High Quality
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="premium">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                            Premium
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-1">
+                      {qualityLevel === 'high' && (
+                        <Badge variant="secondary" className="text-xs">
+                          Enhanced Prompts
+                        </Badge>
+                      )}
+                      {qualityLevel === 'premium' && (
+                        <>
+                          <Badge variant="secondary" className="text-xs">
+                            Multi-Node AI
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            Quality Validation
+                          </Badge>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button onClick={handleRefinePrompt} disabled={isCtaDisabled || !!lastMintTx}>
+                      <Sparkles className="mr-2" />
+                      {isRefining ? "Refining with Alith..." : "Refine with Alith"}
+                    </Button>
+                    <Button onClick={handleGenerateArt} disabled={isGenerateDisabled || !!lastMintTx} className="w-full sm:w-auto flex-1 bg-accent text-accent-foreground hover:bg-accent/90">
+                      <Wand2 className="mr-2" />
+                      {isGenerating ? "Generating Art..." : "Generate Art"}
+                    </Button>
+                  </div>
+                  
+                  {/* BONUS TRACK: LazAI Processing Indicator */}
+                  {lazaiProcessing && lazaiStep && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                      <div className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                      </div>
+                      <span className="font-medium">🚀 LazAI Integration:</span>
+                      <span>{lazaiStep}</span>
+                    </div>
+                  )}
                 </div>
-                <span className="font-medium">🚀 LazAI Integration:</span>
-                <span>{lazaiStep}</span>
-              </div>
-            )}
+              </TabsContent>
+              
+              <TabsContent value="upload" className="space-y-4 mt-6">
+                <ExternalArtUpload
+                  onImageSelected={handleExternalImageSelected}
+                />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
@@ -588,12 +880,46 @@ export default function GeneratePage() {
                 <div className="flex h-full w-full flex-col items-center justify-center p-4 text-center text-muted-foreground">
                     <Wand2 className="mb-4 size-16" />
                     <p className="text-lg font-medium">Your art will appear here</p>
-                    <p className="text-sm">Start by entering a prompt and clicking "Generate Art".</p>
+                    <p className="text-sm">Start by entering a prompt and clicking "Generate Art" or upload external artwork.</p>
                 </div>
               )}
             </div>
 
             <div className="flex w-full max-w-md flex-col items-center gap-4">
+              {/* Phase 5: LazAI Verification Button */}
+              {imageUrl && currentGenerationId && (
+                <div className="flex gap-2 flex-wrap justify-center">
+                  <LazAIVerification
+                    artworkId={currentGenerationId}
+                    imageUrl={imageUrl}
+                    prompt={prompt}
+                    currentScore={refinedResult?.qualityScore}
+                    onVerified={(result) => {
+                      updateGeneration(currentGenerationId, {
+                        lazaiVerified: true,
+                        lazaiScore: result.newScore,
+                        lazaiTxHash: result.lazaiTxHash,
+                        lazaiConsensus: result.consensusNodes
+                      });
+                      updateArtwork(currentGenerationId, {
+                        lazaiVerified: true,
+                        lazaiScore: result.newScore
+                      });
+                      toast({
+                        title: "🏆 LazAI Verification Complete!",
+                        description: `Quality Score: ${(result.newScore * 100).toFixed(1)}%`,
+                      });
+                    }}
+                  />
+                  {shareData && (
+                    <SocialShare 
+                      shareData={shareData} 
+                      onShare={(platform) => trackSocialShare(currentGenerationId)}
+                    />
+                  )}
+                </div>
+              )}
+
               {!walletAddress && imageUrl && (
                   <Button size="lg" onClick={connectWallet} disabled={isCtaDisabled}>
                       Connect Wallet to Mint
@@ -629,10 +955,26 @@ export default function GeneratePage() {
                               View Transaction
                           </Link>
                       </Button>
+                      {shareData && (
+                        <SocialShare 
+                          shareData={shareData} 
+                          onShare={handleSocialShare}
+                        />
+                      )}
                       <Button onClick={handleCreateAnother} className="flex-1">
                           Create Another
                       </Button>
                     </div>
+                </div>
+              )}
+              
+              {/* Phase 4: Show Social Share for unminted artwork too */}
+              {imageUrl && !lastMintTx && shareData && (
+                <div className="flex w-full justify-center">
+                  <SocialShare 
+                    shareData={shareData} 
+                    onShare={handleSocialShare}
+                  />
                 </div>
               )}
             </div>
