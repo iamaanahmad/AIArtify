@@ -9,7 +9,7 @@
 - Modern web browser with Web3 support
 
 ### Required Accounts & API Keys
-- [Google AI Studio](https://makersuite.google.com/) account for Gemini API
+- [Google AI Studio](https://aistudio.google.com/) account for Gemini API
 - [ImgBB](https://imgbb.com/api) account for image hosting
 - MetaMask wallet with Metis Hyperion testnet configured
 - [Vercel](https://vercel.com) account for deployment (recommended)
