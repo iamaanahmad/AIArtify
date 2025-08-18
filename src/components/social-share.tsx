@@ -1,6 +1,38 @@
 /**
  * Phase 4: Social Share Component
- * Advanced social sharing interface with platform-specific optimizations
+ * Advanced so        // Enhanced image download/save with proper error handling
+        try {
+          // First try to download the image via fetch to handle CORS
+          const response = await fetch(shareData.imageUrl);
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${shareData.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'AI-Art'}-AIArtify.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+          } else {
+            throw new Error('Failed to fetch image');
+          }
+        } catch (fetchError) {
+          // Fallback: direct link download
+          const link = document.createElement('a');
+          link.href = shareData.imageUrl;
+          link.download = `${shareData.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'AI-Art'}-AIArtify.png`;
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        
+        toast({
+          title: `📱 Image Download Started!`,
+          description: "Your AI artwork is being saved to your device. Share it on your favorite platforms!",
+          duration: 4000,
+        });interface with platform-specific optimizations
  */
 
 import React, { useState } from 'react';
@@ -51,22 +83,42 @@ export default function SocialShare({ shareData, onShare }: SocialShareProps) {
 
     try {
       setIsSharing(true);
-      if (platformKey === 'instagram' || platformKey === 'discord') {
-        await navigator.clipboard.writeText(platform.shareUrl(shareData));
-        setCopiedPlatform(platformKey);
+      
+      if (platformKey === 'export') {
+        // Handle image download/save
+        const link = document.createElement('a');
+        link.href = shareData.imageUrl;
+        link.download = `${shareData.title || 'AI-Art'}-AIArtify.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
         toast({
-          title: `📋 ${platform.name} Content Copied!`,
-          description: "Content copied to clipboard. Paste it in your app!",
+          title: `� Image Saved!`,
+          description: "Artwork downloaded to your device. You can now share it manually on social platforms.",
           duration: 3000,
         });
-        setTimeout(() => setCopiedPlatform(null), 3000);
       } else {
+        // Handle social platform sharing with better URL generation
         const shareUrl = platform.shareUrl(shareData);
-        window.open(shareUrl, '_blank', 'width=600,height=400');
+        console.log(`Sharing to ${platform.name}:`, shareUrl);
+        
+        // Open in new window with proper settings
+        const newWindow = window.open(
+          shareUrl, 
+          `share-${platformKey}`,
+          'width=600,height=500,scrollbars=yes,resizable=yes,toolbar=no,menubar=no'
+        );
+        
+        if (!newWindow) {
+          // Fallback if popup was blocked
+          window.location.href = shareUrl;
+        }
+        
         toast({
-          title: `🚀 Shared to ${platform.name}!`,
-          description: "Share window opened successfully.",
-          duration: 2000,
+          title: `🚀 Sharing to ${platform.name}!`,
+          description: "Share window opened. Don't forget to download your artwork and attach it for maximum impact!",
+          duration: 4000,
         });
       }
       onShare?.(platformKey);
@@ -74,8 +126,9 @@ export default function SocialShare({ shareData, onShare }: SocialShareProps) {
       console.error('Share error:', error);
       toast({
         variant: "destructive",
-        title: "Share failed",
-        description: `Failed to share to ${platform.name}. Please try again.`,
+        title: "Share Failed",
+        description: `Unable to share to ${platform.name}. Please try copying the link instead.`,
+        duration: 4000,
       });
     } finally {
       setIsSharing(false);
@@ -190,21 +243,12 @@ export default function SocialShare({ shareData, onShare }: SocialShareProps) {
             <Button variant="outline" size="sm" onClick={handleCopyLink} disabled={isSharing} className="px-3 py-2 text-base md:text-sm" aria-label="Copy Link">
               <Copy className="w-4 h-4 mr-1" /> Copy Link
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShowQR} disabled={isSharing} className="px-3 py-2 text-base md:text-sm" aria-label="Show QR Code">
-              <Smartphone className="w-4 h-4 mr-1" /> Show QR
-            </Button>
-             {'share' in navigator && (
+             {typeof window !== 'undefined' && 'share' in navigator && (
                <Button variant="default" size="sm" onClick={handleMobileShare} disabled={isSharing} className="px-3 py-2 text-base md:text-sm" aria-label="Share via Device">
                  <Share2 className="w-4 h-4 mr-1" /> Share via Device
                </Button>
              )}
           </div>
-          {qrUrl && (
-            <div className="flex flex-col items-center gap-2 mt-2">
-              <img src={qrUrl} alt="QR Code" className="w-40 h-40 rounded" />
-              <span className="text-xs text-muted-foreground">Scan to open on any device</span>
-            </div>
-          )}
           {/* Artwork preview */}
           <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
             <CardHeader className="pb-2">

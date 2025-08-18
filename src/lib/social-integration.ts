@@ -24,27 +24,69 @@ export interface SocialPlatform {
   features: string[];
 }
 
-// Random caption generator for X and Telegram
+// Enhanced random caption generator with 20+ unique styles for maximum variety
 function getRandomCaption(data: SocialShareData, platform: 'twitter' | 'telegram'): string {
-  const url = typeof window !== 'undefined' ? window.location.href : '';
-  const baseCaptions = [
-    `Minted on AIArtify! 🎨✨ Check it out: ${url} @MetisL2 @AIArtifyMETIS`,
-    `My latest AI NFT on-chain! ${url} @MetisL2 @AIArtifyMETIS`,
-    `AI + Blockchain = Forever Art. See my creation: ${url} @MetisL2 @AIArtifyMETIS`,
-    `Proud to mint this on AIArtify. View: ${url} @MetisL2 @AIArtifyMETIS`,
-    `Just dropped a new AI NFT! ${url} @MetisL2 @AIArtifyMETIS`,
-    `AI art, on-chain, mine forever. ${url} @MetisL2 @AIArtifyMETIS`,
-    `Created with AI, secured by Metis. ${url} @MetisL2 @AIArtifyMETIS`,
-    `Explore my AI NFT: ${url} @MetisL2 @AIArtifyMETIS`,
-    `Prompt: "${data.prompt.substring(0, 60)}..." ${url} @MetisL2 @AIArtifyMETIS`,
-    `Title: ${data.title} | ${url} @MetisL2 @AIArtifyMETIS`,
+  const appUrl = 'ai-artify.vercel.app'; // Production URL
+  const promptSnippet = data.prompt.length > 50 ? data.prompt.substring(0, 47) + '...' : data.prompt;
+  
+  // 🔥 Powerful & Bold captions (6 variations)
+  const powerfulCaptions = [
+    `🔥 Minted creativity on-chain. This isn't just art — it's permanence.`,
+    `⚡ Where imagination meets the blockchain. Powered by @MetisL2.`,
+    `💎 AI. Provenance. Forever.`,
+    `🚀 Revolutionary 5-node AI consensus validates every pixel of my masterpiece!`,
+    `⚡ AI + Blockchain = Unstoppable Art! Verified by 5 specialized nodes and secured forever.`,
+    `� Breaking boundaries with verified AI art! Every detail analyzed by our AI jury.`
   ];
-  // X (Twitter) character limit is 280
-  let caption = baseCaptions[Math.floor(Math.random() * baseCaptions.length)];
-  if (platform === 'twitter' && caption.length > 280) {
-    caption = caption.substring(0, 277) + '...';
+  
+  // 🎨 Creative & Artistic captions (6 variations)
+  const creativeCaptions = [
+    `🎨 I whispered a prompt, AIArtify painted a universe.`,
+    `✨ From thought → pixels → NFT. #AIArtify magic ✨`,
+    `🌟 A dream turned into digital permanence.`,
+    `🎭 When AI becomes your creative partner! Born from: "${promptSnippet}"`,
+    `🎨 Art meets AI meets forever! My vision transformed into permanent beauty.`,
+    `✨ Creative magic happening! AI helped birth this masterpiece with 5-node validation.`
+  ];
+  
+  // 😎 Casual & Fun captions (4 variations)
+  const casualCaptions = [
+    `😍 Just minted some cool AI art 😍 Check this out!`,
+    `🚀 Hyperion vibes → AI art → NFT drop �`,
+    `👀 Had fun playing with AIArtify — look at this piece 👀`,
+    `🎨 Look what I created! AI + blockchain = permanent art 🎨`
+  ];
+  
+  // 📈 Professional captions (4 variations)
+  const professionalCaptions = [
+    `📈 Exploring the future of AI art & blockchain with AIArtify.`,
+    `🔗 On-chain provenance + AI creativity = trustable NFTs.`,
+    `💼 Minted my artwork as a permanent digital asset on @MetisL2.`,
+    `🏢 Demonstrating the future of verified AI art with blockchain permanence.`
+  ];
+  
+  // Combine all 20 caption styles for maximum variety
+  const allCaptions = [...powerfulCaptions, ...creativeCaptions, ...casualCaptions, ...professionalCaptions];
+  
+  // Pick random caption
+  let baseCaption = allCaptions[Math.floor(Math.random() * allCaptions.length)];
+  
+  // Add prompt snippet and project link
+  let fullCaption = `${baseCaption}\n\nPrompt: "${promptSnippet}"\n\nTry it: ${appUrl}\n\n#AIArtify @MetisL2 #HyperHack #AIArt`;
+  
+  // Handle X (Twitter) character limit of 280
+  if (platform === 'twitter' && fullCaption.length > 280) {
+    // Optimize for Twitter by shortening components
+    const shorterPrompt = data.prompt.length > 30 ? data.prompt.substring(0, 27) + '...' : data.prompt;
+    fullCaption = `${baseCaption}\n\nPrompt: "${shorterPrompt}"\n\n${appUrl}\n\n#AIArtify @MetisL2 #HyperHack`;
+    
+    // Final check and truncate if still too long
+    if (fullCaption.length > 280) {
+      fullCaption = fullCaption.substring(0, 277) + '...';
+    }
   }
-  return caption;
+  
+  return fullCaption;
 }
 
 export const socialPlatforms: Record<string, SocialPlatform> = {
@@ -80,24 +122,31 @@ export function canUseWebShare() {
 
 export async function shareViaWebAPI(data: SocialShareData) {
   if (!canUseWebShare()) throw new Error('Web Share API not supported');
+  
+  // Use our enhanced caption system for mobile sharing
+  const shareText = getRandomCaption(data, 'telegram'); // Telegram format allows more characters
+  
   const shareObj: any = {
-    title: data.title,
-    text: `Just minted my AI masterpiece on AIArtify 🎨✨\nOn-chain. Permanent. Mine forever.\nTry creating your own 👉 ${typeof window !== 'undefined' ? window.location.href : ''}\n@MetisL2 @AIArtifyMETIS`,
-    url: typeof window !== 'undefined' ? window.location.href : ''
+    title: `${data.title} | AIArtify`,
+    text: shareText,
+    url: typeof window !== 'undefined' ? window.location.href : 'ai-artify.vercel.app'
   };
+  
   // Try to attach image if supported (most modern browsers, including MetaMask in-app browser)
   if (navigator.canShare && data.imageUrl) {
     try {
       const response = await fetch(data.imageUrl);
       const blob = await response.blob();
-      const file = new File([blob], 'artwork.png', { type: blob.type });
+      const file = new File([blob], `${data.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'AIArtify'}-artwork.png`, { type: blob.type });
       if (navigator.canShare({ files: [file] })) {
         shareObj.files = [file];
       }
     } catch (e) {
       // fallback: ignore image if can't fetch
+      console.log('Could not attach image to share, continuing with text only');
     }
   }
+  
   await navigator.share(shareObj);
 }
 

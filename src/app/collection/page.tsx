@@ -69,6 +69,28 @@ export default function CollectionPage() {
     setIsLoading(true);
     setError(null);
     try {
+      // Phase 1: Check local storage first (fastest)
+      console.log('=== STEP 1: Loading from local storage ===');
+      const localNfts = getNftsForWallet(address);
+      console.log('Found', localNfts.length, 'locally stored NFTs for wallet');
+      
+      let localNftData: NftData[] = [];
+      
+      if (localNfts.length > 0) {
+        // Display local NFTs immediately for better UX
+        localNftData = localNfts.map(localNft => ({
+          id: localNft.tokenId,
+          title: localNft.name,
+          prompt: localNft.refinedPrompt || localNft.originalPrompt,
+          imageUrl: localNft.image,
+          txHash: localNft.txHash,
+        }));
+        setNfts(localNftData);
+      }
+
+      // Phase 2: Verify ownership on blockchain
+      console.log('=== STEP 2: Blockchain verification ===');
+      
       // Create a completely fresh provider for each call to avoid network conflicts
       const provider = new ethers.JsonRpcProvider("https://hyperion-testnet.metisdevops.link", {
         name: "Metis Hyperion Testnet",
@@ -85,168 +107,71 @@ export default function CollectionPage() {
       
       const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, provider);
 
-      // First, let's check if the contract exists and has any events at all
-      console.log('=== STEP 1: Basic contract check ===');
-      try {
-        const code = await provider.getCode(contractConfig.address);
-        console.log('Contract code length:', code.length);
-        if (code === '0x') {
-          throw new Error('Contract does not exist at this address');
-        }
-        
-        // Log available contract functions for debugging
-        console.log('=== CONTRACT FUNCTIONS DEBUG ===');
-        try {
-          console.log('Contract fragments:', contract.interface.fragments.length);
-          console.log('Available functions:', contract.interface.fragments.filter(f => f.type === 'function').map(f => f.format()));
-        } catch (debugError) {
-          console.log('Could not inspect contract interface:', debugError);
-        }
-      } catch (error) {
-        console.error('Contract check failed:', error);
-        throw error;
+      // Basic contract existence check
+      const code = await provider.getCode(contractConfig.address);
+      if (code === '0x') {
+        throw new Error('Contract does not exist at this address');
       }
 
-      // Let's try a different approach - get ALL transfer events first to see what's there
-      console.log('=== STEP 2: Getting ALL transfer events (recent blocks only) ===');
+      // Get current block to limit search range
       const currentBlock = await provider.getBlockNumber();
       console.log('Current block:', currentBlock);
       
-      // Query only recent blocks to avoid the range limit
-      const fromBlock = Math.max(0, currentBlock - 10000); // Last ~10k blocks
+      // Query only recent blocks to avoid range limit issues
+      const fromBlock = Math.max(0, currentBlock - 50000); // Last ~50k blocks
       console.log(`Querying Transfer events from block ${fromBlock} to ${currentBlock}`);
       
-      const allTransferFilter = contract.filters.Transfer(null, null, null);
-      const allTransfers = await safeContractCall(() => 
-        contract.queryFilter(allTransferFilter, fromBlock, currentBlock)
-      );
-      
-      console.log('All Transfer events found:', allTransfers?.length || 0);
-      
-      if (allTransfers && allTransfers.length > 0) {
-        console.log('Sample transfer events:', allTransfers.slice(0, 3));
-        
-        // Check which ones are mints (from zero address)
-        const mints = allTransfers.filter(event => {
-          const eventLog = event as ethers.EventLog;
-          return eventLog.args && eventLog.args[0] === ethers.ZeroAddress;
-        });
-        console.log('Mint events found:', mints.length);
-        
-        // Check which ones involve our address
-        const userEvents = allTransfers.filter(event => {
-          const eventLog = event as ethers.EventLog;
-          if (!eventLog.args) return false;
-          const from = eventLog.args[0];
-          const to = eventLog.args[1];
-          return from.toLowerCase() === address.toLowerCase() || 
-                 to.toLowerCase() === address.toLowerCase();
-        });
-        console.log('Events involving user address:', userEvents.length);
-        console.log('User events:', userEvents);
-      }
-
-      // Now let's try to get mint events that went to our address specifically
-      console.log('=== STEP 3: Getting mint events to user address ===');
+      // Query mint events to this address
       const mintToUserFilter = contract.filters.Transfer(ethers.ZeroAddress, address, null);
       const mintToUser = await safeContractCall(() => 
         contract.queryFilter(mintToUserFilter, fromBlock, currentBlock)
       );
       
-      console.log('Mint events to user:', mintToUser?.length || 0);
-      console.log('Mint to user events:', mintToUser);
+      console.log('Mint events to user found:', mintToUser?.length || 0);
 
-      if (!mintToUser || mintToUser.length === 0) {
-        console.log('No mint events found for user - checking if any tokens exist at all');
-        
-        // Let's try to check tokens 1-10 to see if any exist
-        console.log('=== STEP 4: Checking tokens 1-10 directly ===');
-        for (let i = 1; i <= 10; i++) {
-          try {
-            const owner = await safeContractCall(() => contract.ownerOf(i));
-            console.log(`Token ${i} owner:`, owner);
-            if (owner && owner.toLowerCase() === address.toLowerCase()) {
-              console.log(`User owns token ${i}!`);
-              const tokenURI = await safeContractCall(() => contract.tokenURI(i));
-              console.log(`Token ${i} URI:`, tokenURI);
-            }
-          } catch (error) {
-            console.log(`Token ${i} does not exist`);
-          }
-        }
-        
-        setNfts([]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Process the mint events to get NFT data
-      console.log('=== STEP 5: Processing mint events ===');
-      
-      // First, get any locally stored NFTs for this wallet
-      const localNfts = getNftsForWallet(address);
-      console.log('Found', localNfts.length, 'locally stored NFTs');
-      
-      // Create a hybrid approach: verify blockchain ownership + use local metadata
-      const allNftData: NftData[] = [];
-      
-      // Add confirmed blockchain NFTs with local metadata
       if (mintToUser && mintToUser.length > 0) {
-        const nftPromises = mintToUser.map(async (event, index): Promise<NftData | null> => {
+        console.log('=== STEP 3: Processing blockchain NFTs ===');
+        
+        const blockchainNfts: NftData[] = [];
+        
+        // Process each mint event
+        for (const event of mintToUser) {
           try {
-            console.log(`Processing mint event ${index + 1}/${mintToUser.length}:`, event);
-            
             const eventLog = event as ethers.EventLog;
-            if (!eventLog.args) {
-              console.log('Event has no args');
-              return null;
-            }
+            if (!eventLog.args) continue;
 
             const tokenId = eventLog.args[2];
-            console.log('Processing token ID:', tokenId?.toString());
-            if (!tokenId) return null;
+            if (!tokenId) continue;
 
             // Verify current ownership
             const currentOwner = await safeContractCall(() => contract.ownerOf(tokenId));
             
-            if (!currentOwner) {
-              console.log('Token', tokenId.toString(), 'does not exist or was burned');
-              return null;
-            }
-            
-            console.log('Current owner of token', tokenId.toString(), ':', currentOwner);
-            
-            if (currentOwner.toLowerCase() !== address.toLowerCase()) {
-              console.log('Token', tokenId.toString(), 'not owned by user');
-              return null;
+            if (!currentOwner || currentOwner.toLowerCase() !== address.toLowerCase()) {
+              console.log(`Token ${tokenId} no longer owned by user`);
+              continue;
             }
 
-            // Try multiple methods to get token metadata
-            console.log(`=== Processing NFT #${tokenId} ===`);
-            
-            // PRIORITY 1: Check local storage first (most reliable)
-            const localNft = getNftByTokenId(tokenId.toString());
-            if (localNft) {
-              console.log(`✅ Found NFT #${tokenId} in local storage`);
-              const nftData = {
-                id: localNft.tokenId,
-                title: localNft.name,
-                prompt: localNft.refinedPrompt || localNft.originalPrompt,
-                imageUrl: localNft.image,
-                txHash: localNft.txHash,
-              };
-              return nftData;
+            // Check if we already have this NFT from local storage
+            const existingNft = localNfts.find(local => local.tokenId === tokenId.toString());
+            if (existingNft) {
+              console.log(`Token ${tokenId} already in local storage, verified ownership`);
+              continue;
             }
+
+            // Try to get metadata for new NFTs
+            console.log(`Processing new NFT #${tokenId} from blockchain`);
             
-            // PRIORITY 2: Try to recover from transaction data
-            const txHash = event.transactionHash;
-            if (txHash) {
+            let metadata = null;
+            
+            // Try transaction recovery first
+            if (event.transactionHash) {
               try {
-                const recoveredMetadata = await recoverNftMetadataFromTx(txHash);
+                const recoveredMetadata = await recoverNftMetadataFromTx(event.transactionHash);
                 if (recoveredMetadata) {
-                  console.log(`✅ Recovered NFT #${tokenId} metadata from transaction`);
+                  metadata = recoveredMetadata;
+                  console.log(`✅ Recovered metadata for NFT #${tokenId} from transaction`);
                   
-                  // Store the recovered metadata for future use
+                  // Store the recovered metadata locally for future use
                   const nftMetadata = {
                     tokenId: tokenId.toString(),
                     name: recoveredMetadata.name,
@@ -255,96 +180,89 @@ export default function CollectionPage() {
                     originalPrompt: recoveredMetadata.attributes?.find((attr: any) => attr.trait_type === "Original Prompt")?.value || "",
                     refinedPrompt: recoveredMetadata.attributes?.find((attr: any) => attr.trait_type === "Refined Prompt")?.value || "",
                     reasoning: recoveredMetadata.attributes?.find((attr: any) => attr.trait_type === "Alith's Reasoning")?.value || "",
-                    txHash: txHash,
+                    txHash: event.transactionHash,
                     mintedAt: Date.now(),
                     walletAddress: address
                   };
                   storeNftMetadata(nftMetadata);
-                  
-                  const nftData = {
-                    id: tokenId.toString(),
-                    title: recoveredMetadata.name,
-                    prompt: recoveredMetadata.attributes?.find((attr: any) => attr.trait_type === "Refined Prompt")?.value || 
-                           recoveredMetadata.attributes?.find((attr: any) => attr.trait_type === "Original Prompt")?.value || "N/A",
-                    imageUrl: recoveredMetadata.image,
-                    txHash: txHash,
-                  };
-                  return nftData;
                 }
               } catch (recoveryError) {
-                // Silently continue to next method
+                // Continue to fallback
               }
             }
             
-            // PRIORITY 3: Try contract call (as fallback)
-            let tokenURI = await getTokenMetadata(contract, tokenId);
-            
-            if (tokenURI && tokenURI.startsWith('data:application/json;base64,')) {
-              try {
-                const base64String = tokenURI.split(',')[1];
-                const jsonString = Buffer.from(base64String, 'base64').toString('utf8');
-                const metadata: NftMetadata = JSON.parse(jsonString);
-
-                const nftData = {
-                  id: tokenId.toString(),
-                  title: metadata.name || 'Untitled',
-                  prompt: metadata.attributes?.find(attr => attr.trait_type === "Refined Prompt")?.value || 
-                         metadata.attributes?.find(attr => attr.trait_type === "Original Prompt")?.value || 
-                         "N/A",
-                  imageUrl: metadata.image,
-                  txHash: event.transactionHash || 'N/A',
-                };
-                console.log(`✅ NFT #${tokenId} data created from contract metadata`);
-                return nftData;
-              } catch (metadataError) {
-                // Silently continue to fallback
+            // Try contract call if no metadata recovered
+            if (!metadata) {
+              const tokenURI = await getTokenMetadata(contract, tokenId);
+              if (tokenURI && tokenURI.startsWith('data:application/json;base64,')) {
+                try {
+                  const base64String = tokenURI.split(',')[1];
+                  const jsonString = Buffer.from(base64String, 'base64').toString('utf8');
+                  metadata = JSON.parse(jsonString);
+                  console.log(`✅ Got metadata for NFT #${tokenId} from contract`);
+                } catch (parseError) {
+                  // Continue to fallback
+                }
               }
             }
             
-            // FINAL FALLBACK: Create default NFT entry
-            console.log(`⚠️ Using fallback display for NFT #${tokenId}`);
-            const nftData = {
-              id: tokenId.toString(),
-              title: `NFT #${tokenId.toString()}`,
-              prompt: "Metadata available in wallet - Contract query optimized",
-              imageUrl: '/placeholder-nft.svg',
-              txHash: event.transactionHash || 'N/A',
-            };
-            return nftData;
-          } catch (err) {
-            console.error(`Failed to fetch metadata for token:`, err);
-            return null;
+            // Create NFT data entry
+            if (metadata) {
+              const nftData = {
+                id: tokenId.toString(),
+                title: metadata.name || `NFT #${tokenId}`,
+                prompt: metadata.attributes?.find((attr: any) => attr.trait_type === "Refined Prompt")?.value || 
+                       metadata.attributes?.find((attr: any) => attr.trait_type === "Original Prompt")?.value || 
+                       "Blockchain-verified artwork",
+                imageUrl: metadata.image || '/placeholder-nft.svg',
+                txHash: event.transactionHash || 'N/A',
+              };
+              blockchainNfts.push(nftData);
+            } else {
+              // Fallback entry for verified ownership
+              const nftData = {
+                id: tokenId.toString(),
+                title: `NFT #${tokenId}`,
+                prompt: "Blockchain-verified artwork (metadata loading...)",
+                imageUrl: '/placeholder-nft.svg',
+                txHash: event.transactionHash || 'N/A',
+              };
+              blockchainNfts.push(nftData);
+            }
+            
+          } catch (error) {
+            console.error(`Failed to process NFT:`, error);
+            continue;
           }
-        });
+        }
         
-        const results = await Promise.all(nftPromises);
-        const validNfts = results.filter((nft): nft is NftData => nft !== null);
-        allNftData.push(...validNfts);
+        // Merge local and blockchain NFTs
+        const allNftData = [...localNftData, ...blockchainNfts].reverse(); // Most recent first
+        console.log('Final merged NFT count:', allNftData.length);
+        setNfts(allNftData);
+      } else {
+        // Only local NFTs available
+        console.log('No blockchain events found, using local NFTs only');
       }
-      
-      // Also add any local NFTs that might not have been found on-chain (due to sync issues)
-      const localOnlyNfts = localNfts.filter(localNft => 
-        !allNftData.some(chainNft => chainNft.id === localNft.tokenId)
-      ).map(localNft => ({
-        id: localNft.tokenId,
-        title: localNft.name + " (Local)",
-        prompt: localNft.refinedPrompt || localNft.originalPrompt,
-        imageUrl: localNft.image,
-        txHash: localNft.txHash,
-      }));
-      
-      if (localOnlyNfts.length > 0) {
-        console.log('Adding', localOnlyNfts.length, 'local-only NFTs');
-        allNftData.push(...localOnlyNfts);
-      }
-      
-      const finalNfts = allNftData.reverse(); // Show most recent first
-      console.log('Final NFTs:', finalNfts);
-      setNfts(finalNfts);
 
     } catch (err) {
       console.error("Failed to fetch user's NFTs:", err);
-      setError("Could not load your collection. Please try again later.");
+      
+      // Fallback: try to show local NFTs even if blockchain query failed
+      const fallbackLocalNfts = getNftsForWallet(address);
+      if (fallbackLocalNfts.length > 0) {
+        console.log('Blockchain query failed, showing local NFTs as fallback');
+        const fallbackNftData = fallbackLocalNfts.map(localNft => ({
+          id: localNft.tokenId,
+          title: localNft.name + " (Local)",
+          prompt: localNft.refinedPrompt || localNft.originalPrompt,
+          imageUrl: localNft.image,
+          txHash: localNft.txHash,
+        }));
+        setNfts(fallbackNftData);
+      } else {
+        setError("Could not load your collection. Please try refreshing or check your network connection.");
+      }
     } finally {
       setIsLoading(false);
     }
