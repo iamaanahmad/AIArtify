@@ -10,14 +10,15 @@ import { Icons } from '@/components/icons';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'AIArtify | AI-Powered NFTs',
-  description: 'Generate and mint AI art as NFTs on Algorand blockchain with LazAI integration.',
-  keywords: ['AI art', 'NFT', 'Algorand', 'blockchain', 'generative art', 'digital collectibles'],
+  title: 'AIArtify | AI-Powered NFT Art with 5-Node Consensus',
+  description: 'Revolutionary AI art platform with 5-node consensus validation. Create, verify, and mint AI art as NFTs on Metis Hyperion with LazAI integration.',
+  keywords: ['AI art', 'NFT', 'Metis', 'blockchain', 'LazAI', 'AI consensus', 'generative art', 'digital collectibles', 'Hyperion'],
   authors: [{ name: 'AIArtify Team' }],
   creator: 'AIArtify',
   publisher: 'AIArtify',
   applicationName: 'AIArtify',
   manifest: '/manifest.json',
+  metadataBase: new URL('https://www.ai-artify.xyz'),
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -35,21 +36,22 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'AIArtify',
-    title: 'AIArtify | AI-Powered NFTs',
-    description: 'Generate and mint AI art as NFTs on Algorand blockchain',
+    title: 'AIArtify | AI-Powered NFTs with 5-Node Consensus',
+    description: 'Revolutionary AI art platform with 5-node consensus validation on Metis Hyperion blockchain',
+    url: 'https://www.ai-artify.xyz',
     images: [
       {
         url: '/logo.png',
         width: 1200,
         height: 630,
-        alt: 'AIArtify - AI-Powered NFT Platform',
+        alt: 'AIArtify - Revolutionary 5-Node AI Art Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AIArtify | AI-Powered NFTs',
-    description: 'Generate and mint AI art as NFTs on Algorand blockchain',
+    title: 'AIArtify | AI-Powered NFTs with 5-Node Consensus',
+    description: 'Revolutionary AI art platform with 5-node consensus validation on Metis Hyperion blockchain',
     images: ['/logo.png'],
   },
 };

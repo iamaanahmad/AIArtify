@@ -26,7 +26,7 @@ export interface SocialPlatform {
 
 // Enhanced random caption generator with 20+ unique styles for maximum variety
 function getRandomCaption(data: SocialShareData, platform: 'twitter' | 'telegram'): string {
-  const appUrl = 'ai-artify.vercel.app'; // Production URL
+  const appUrl = 'https://www.ai-artify.xyz'; // Primary custom domain
   const promptSnippet = data.prompt.length > 50 ? data.prompt.substring(0, 47) + '...' : data.prompt;
   
   // 🔥 Powerful & Bold captions (6 variations)
@@ -129,7 +129,7 @@ export async function shareViaWebAPI(data: SocialShareData) {
   const shareObj: any = {
     title: `${data.title} | AIArtify`,
     text: shareText,
-    url: typeof window !== 'undefined' ? window.location.href : 'ai-artify.vercel.app'
+    url: typeof window !== 'undefined' ? window.location.href : 'https://www.ai-artify.xyz'
   };
   
   // Try to attach image if supported (most modern browsers, including MetaMask in-app browser)
@@ -159,7 +159,7 @@ export function generatePreviewMetadata(data: SocialShareData) {
     title: `${data.title} | AIArtify`,
     description: data.description || `AI-generated artwork: "${data.prompt.substring(0, 160)}${data.prompt.length > 160 ? '...' : ''}"`,
     image: data.imageUrl,
-    url: typeof window !== 'undefined' ? window.location.href : '',
+    url: typeof window !== 'undefined' ? window.location.href : 'https://www.ai-artify.xyz',
     type: "article",
     site_name: "AIArtify",
     card: "summary_large_image",

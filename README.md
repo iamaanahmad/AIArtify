@@ -17,10 +17,10 @@
 
 **📱 Access:** Works seamlessly on both desktop and mobile browsers with offline capabilities (PWA) | **⚡ Demo:** 60-second experience | **🧠 LazAI:** Real SDK integration
 
-[![🚀 LIVE DEMO](https://img.shields.io/badge/🚀-LIVE_DEMO-FF6B6B?style=for-the-badge&logo=rocket)](https://ai-artify.vercel.app/)
-[![🎥 DEMO VIDEO](https://img.shields.io/badge/🎥-DEMO_VIDEO-9D4EDD?style=for-the-badge&logo=play)](https://ai-artify.vercel.app/onboarding)
-[![🖼️ PUBLIC GALLERY](https://img.shields.io/badge/🖼️-PUBLIC_GALLERY-4ECDC4?style=for-the-badge&logo=image)](https://ai-artify.vercel.app/gallery)
-[![🏆 LEADERBOARD](https://img.shields.io/badge/🏆-LEADERBOARD-FFD93D?style=for-the-badge&logo=trophy)](https://ai-artify.vercel.app/leaderboard)
+[![🚀 LIVE DEMO](https://img.shields.io/badge/🚀-LIVE_DEMO-FF6B6B?style=for-the-badge&logo=rocket)](https://www.ai-artify.xyz/)
+[![🎥 DEMO VIDEO](https://img.shields.io/badge/🎥-DEMO_VIDEO-9D4EDD?style=for-the-badge&logo=play)](https://www.ai-artify.xyz/onboarding)
+[![🖼️ PUBLIC GALLERY](https://img.shields.io/badge/🖼️-PUBLIC_GALLERY-4ECDC4?style=for-the-badge&logo=image)](https://www.ai-artify.xyz/gallery)
+[![🏆 LEADERBOARD](https://img.shields.io/badge/🏆-LEADERBOARD-FFD93D?style=for-the-badge&logo=trophy)](https://www.ai-artify.xyz/leaderboard)
 
 ---
 
@@ -160,9 +160,9 @@ User Prompt → LazAI Enhancement → 5-Node Validation → Visual Breakdown →
 
 ## 📚 **Documentation & Links**
 
-- **🚀 Live Demo:** [ai-artify.vercel.app](https://ai-artify.vercel.app/)
-- **🖼️ Public Gallery:** [ai-artify.vercel.app/gallery](https://ai-artify.vercel.app/gallery)
-- **🏆 Leaderboard:** [ai-artify.vercel.app/leaderboard](https://ai-artify.vercel.app/leaderboard)
+- **🚀 Live Demo:** [www.ai-artify.xyz](https://www.ai-artify.xyz/)
+- **🖼️ Public Gallery:** [www.ai-artify.xyz/gallery](https://www.ai-artify.xyz/gallery)
+- **🏆 Leaderboard:** [www.ai-artify.xyz/leaderboard](https://www.ai-artify.xyz/leaderboard)
 - **📖 Technical Docs:** [Project Summary](./docs/PROJECT_SUMMARY.md)
 - **🔧 Architecture:** [Technical Documentation](./docs/TECHNICAL_SUMMARY.md)
 - **🎯 LazAI Integration:** [Bonus Track Details](./docs/bonus-track-lazai-integration.md)
@@ -175,7 +175,7 @@ User Prompt → LazAI Enhancement → 5-Node Validation → Visual Breakdown →
 
 **Built with ❤️ for the Web3 community | Powered by LazAI + Hyperion**
 
-[![Start Creating](https://img.shields.io/badge/🎨-Start_Creating-4ECDC4?style=for-the-badge)](https://ai-artify.vercel.app/)
+[![Start Creating](https://img.shields.io/badge/🎨-Start_Creating-4ECDC4?style=for-the-badge)](https://www.ai-artify.xyz/)
 [![GitHub](https://img.shields.io/badge/💻-Source_Code-333?style=for-the-badge&logo=github)](https://github.com/iamaanahmad/AIArtify)
 
 </div>

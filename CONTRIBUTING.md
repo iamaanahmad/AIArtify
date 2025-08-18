@@ -48,7 +48,7 @@ Thank you for your interest in contributing to AIArtify! We welcome contribution
 - Use the [GitHub Issues](https://github.com/iamaanahmad/AIArtify/issues) to report bugs
 - Include steps to reproduce the issue
 - Provide screenshots or error messages when applicable
-- Test on the [live demo](https://ai-artify.vercel.app/) first
+- Test on the [live demo](https://www.ai-artify.xyz/) first
 
 ### 💡 Feature Requests
 - Open an issue with the "enhancement" label

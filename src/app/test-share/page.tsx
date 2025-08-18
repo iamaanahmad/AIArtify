@@ -32,11 +32,11 @@ export default function TestSharePage() {
       // This would normally call the getRandomCaption function
       // For demo purposes, we'll show different styles
       const styles = [
-        "🔥 Minted creativity on-chain. This isn't just art — it's permanence.\n\nPrompt: \"A cyberpunk city at dawn with floating cars...\"\n\nTry it: ai-artify.vercel.app\n\n#AIArtify @MetisL2 #HyperHack #AIArt",
-        "🎨 I whispered a prompt, AIArtify painted a universe.\n\nPrompt: \"A cyberpunk city at dawn with floating cars...\"\n\nTry it: ai-artify.vercel.app\n\n#AIArtify @MetisL2 #HyperHack #AIArt",
-        "😍 Just minted some cool AI art 😍 Check this out!\n\nPrompt: \"A cyberpunk city at dawn with floating cars...\"\n\nTry it: ai-artify.vercel.app\n\n#AIArtify @MetisL2 #HyperHack #AIArt",
-        "📈 Exploring the future of AI art & blockchain with AIArtify.\n\nPrompt: \"A cyberpunk city at dawn with floating cars...\"\n\nTry it: ai-artify.vercel.app\n\n#AIArtify @MetisL2 #HyperHack #AIArt",
-        "⚡ AI + Blockchain = Unstoppable Art! Verified by 5 specialized nodes and secured forever.\n\nPrompt: \"A cyberpunk city at dawn with floating cars...\"\n\nTry it: ai-artify.vercel.app\n\n#AIArtify @MetisL2 #HyperHack #AIArt"
+        "🔥 Minted creativity on-chain. This isn't just art — it's permanence.\n\nPrompt: \"A cyberpunk city at dawn with floating cars...\"\n\nTry it: www.ai-artify.xyz\n\n#AIArtify @MetisL2 #HyperHack #AIArt",
+        "🎨 I whispered a prompt, AIArtify painted a universe.\n\nPrompt: \"A cyberpunk city at dawn with floating cars...\"\n\nTry it: www.ai-artify.xyz\n\n#AIArtify @MetisL2 #HyperHack #AIArt",
+        "😍 Just minted some cool AI art 😍 Check this out!\n\nPrompt: \"A cyberpunk city at dawn with floating cars...\"\n\nTry it: www.ai-artify.xyz\n\n#AIArtify @MetisL2 #HyperHack #AIArt",
+        "📈 Exploring the future of AI art & blockchain with AIArtify.\n\nPrompt: \"A cyberpunk city at dawn with floating cars...\"\n\nTry it: www.ai-artify.xyz\n\n#AIArtify @MetisL2 #HyperHack #AIArt",
+        "⚡ AI + Blockchain = Unstoppable Art! Verified by 5 specialized nodes and secured forever.\n\nPrompt: \"A cyberpunk city at dawn with floating cars...\"\n\nTry it: www.ai-artify.xyz\n\n#AIArtify @MetisL2 #HyperHack #AIArt"
       ];
       captions.push(styles[i]);
     }
@@ -109,7 +109,7 @@ export default function TestSharePage() {
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• 📱 Always includes image preview</li>
               <li>• ✍️ Shortened prompt (50 chars max)</li>
-              <li>• 🔗 Project link: ai-artify.vercel.app</li>
+              <li>• 🔗 Project link: www.ai-artify.xyz</li>
               <li>• 🏷️ Tags: #AIArtify @MetisL2 #HyperHack</li>
               <li>• 🎯 20+ caption variations for uniqueness</li>
               <li>• 📏 Twitter-optimized (280 char limit)</li>

@@ -1,4 +1,7 @@
 # 🚀 AIArtify Deployment Guide
+## Production Live at: https://www.ai-artify.xyz/ 🎉
+
+> **📍 Custom Domain:** The platform is now live at **https://www.ai-artify.xyz/** with backup deployment at https://ai-artify.vercel.app/
 
 ## 📋 Prerequisites
 
