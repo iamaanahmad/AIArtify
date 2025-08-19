@@ -16,7 +16,7 @@ Thank you for your interest in contributing to AIArtify! We welcome contribution
 1. **Fork the Repository**
    ```bash
    # Fork on GitHub, then clone your fork
-   git clone https://github.com/YOUR_USERNAME/AIArtify.git
+   git clone https://github.com/iamaanahmad/AIArtify.git
    cd AIArtify
    ```
 

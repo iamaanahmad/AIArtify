@@ -26,8 +26,11 @@ const STORAGE_KEY = 'aiartify_nfts';
 export function storeNftMetadata(metadata: StoredNftMetadata): void {
   try {
     const stored = getStoredNfts();
-    // Add new NFT, removing any existing one with same token ID
-    const filtered = stored.filter(nft => nft.tokenId !== metadata.tokenId);
+    // Remove any existing NFT with same token ID OR same transaction hash (to handle updates)
+    const filtered = stored.filter(nft => 
+      nft.tokenId !== metadata.tokenId && 
+      nft.txHash !== metadata.txHash
+    );
     filtered.push(metadata);
     
     // Keep only last 100 NFTs to avoid storage bloat
@@ -60,4 +63,9 @@ export function getNftsForWallet(walletAddress: string): StoredNftMetadata[] {
 export function getNftByTokenId(tokenId: string): StoredNftMetadata | null {
   const allNfts = getStoredNfts();
   return allNfts.find(nft => nft.tokenId === tokenId) || null;
+}
+
+export function getNftByTxHash(txHash: string): StoredNftMetadata | null {
+  const allNfts = getStoredNfts();
+  return allNfts.find(nft => nft.txHash === txHash) || null;
 }

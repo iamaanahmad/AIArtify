@@ -39,15 +39,12 @@ export default function GalleryPage() {
 
   useEffect(() => {
     const fetchPublicNfts = async () => {
-      console.log('=== PUBLIC GALLERY DEBUG START ===');
       setIsLoading(true);
       setError(null);
       
       try {
         const provider = getRpcProvider();
         const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, provider);
-        
-        console.log('=== STEP 1: Getting ALL mint events ===');
         const currentBlock = await provider.getBlockNumber();
         console.log('Current block:', currentBlock);
         
@@ -63,8 +60,19 @@ export default function GalleryPage() {
         console.log('Total mint events found:', allMints?.length || 0);
         
         if (!allMints || allMints.length === 0) {
-          console.log('No mint events found');
-          setNfts([]);
+          console.log('No mint events found on blockchain, falling back to local storage only');
+          // Fallback to local storage NFTs only
+          const localNfts = getStoredNfts();
+          const localPublicNfts = localNfts.map((nft, index) => ({
+            id: nft.tokenId,
+            creator: nft.walletAddress,
+            title: nft.name,
+            prompt: nft.originalPrompt || nft.refinedPrompt || "AI Generated Artwork",
+            imageUrl: nft.image,
+            avatarUrl: `https://api.dicebear.com/7.x/identicon/svg?seed=${nft.walletAddress}`,
+            txHash: nft.txHash
+          }));
+          setNfts(localPublicNfts);
           setIsLoading(false);
           return;
         }

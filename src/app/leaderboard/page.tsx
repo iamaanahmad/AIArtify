@@ -204,7 +204,7 @@ export default function LeaderboardPage() {
                         // Tertiary sort: NFT count
                         return b.nftCount - a.nftCount;
                     })
-                    .slice(0, 25) // Top 25
+                    .slice(0, 10) // Top 10 for cleaner UI
                     .map((entry, index) => ({ ...entry, rank: index + 1 }));
 
                 console.log('=== LEADERBOARD RESULT ===');

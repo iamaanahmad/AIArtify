@@ -517,6 +517,26 @@ export default function GeneratePage() {
         console.log('=== POST-MINT VERIFICATION ===');
         console.log('Transaction receipt:', receipt);
         
+        // CRITICAL: Store NFT immediately with transaction hash as fallback ID
+        // This ensures the NFT is saved even if tokenId extraction fails
+        const fallbackNftMetadata = {
+          tokenId: `tx_${receipt.hash.slice(-8)}`, // Use last 8 chars of tx hash as fallback ID
+          name: metadata.name,
+          description: metadata.description,
+          image: metadata.image,
+          originalPrompt: metadata.attributes.find(attr => attr.trait_type === "Original Prompt")?.value || "",
+          refinedPrompt: metadata.attributes.find(attr => attr.trait_type === "Refined Prompt")?.value || "",
+          reasoning: metadata.attributes.find(attr => attr.trait_type === "Alith's Reasoning")?.value || "",
+          lazaiReasoning: metadata.attributes.find(attr => attr.trait_type === "LazAI Reasoning")?.value || "",
+          lazaiModel: metadata.attributes.find(attr => attr.trait_type === "LazAI Model")?.value || "",
+          lazaiConfidence: metadata.attributes.find(attr => attr.trait_type === "LazAI Confidence")?.value || "",
+          lazaiTxHash: metadata.attributes.find(attr => attr.trait_type === "LazAI Transaction")?.value || "",
+          txHash: receipt.hash,
+          mintedAt: Date.now(),
+          walletAddress: walletAddress!
+        };
+        storeNftMetadata(fallbackNftMetadata);
+        
         // Extract token ID from the receipt
         let tokenId: bigint | null = null;
         try {
@@ -535,7 +555,7 @@ export default function GeneratePage() {
             tokenId = parsed?.args[2] as bigint;
             console.log('Minted token ID:', tokenId?.toString());
             
-            // Store NFT metadata locally as a fallback
+            // Update the NFT with the proper tokenId (this will replace the fallback entry)
             if (tokenId) {
               const nftMetadata = {
                 tokenId: tokenId.toString(),
@@ -554,8 +574,8 @@ export default function GeneratePage() {
                 mintedAt: Date.now(),
                 walletAddress: walletAddress!
               };
-              storeNftMetadata(nftMetadata);
-              console.log('✅ Stored NFT metadata locally for token:', tokenId.toString());
+              storeNftMetadata(nftMetadata); // This will replace the fallback entry due to same txHash
+              console.log('✅ Updated NFT metadata with proper token ID:', tokenId.toString());
             }
             
             // Immediately try to fetch the tokenURI to see if it was stored

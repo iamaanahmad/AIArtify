@@ -21,9 +21,28 @@ function isMobileDevice() {
 }
 
 function getDappUrl() {
-  if (typeof window === 'undefined') return '';
-  // Remove protocol for MetaMask deep link
-  return window.location.host + window.location.pathname;
+  if (typeof window === 'undefined') return 'www.ai-artify.xyz';
+  
+  // For production deployments (custom domain or vercel), use the production URL
+  if (window.location.hostname.includes('ai-artify.xyz') || 
+      window.location.hostname.includes('vercel.app')) {
+    return 'www.ai-artify.xyz';
+  }
+  
+  // For localhost development, use a clean localhost format
+  if (window.location.hostname === 'localhost') {
+    return `localhost:${window.location.port || '3000'}`;
+  }
+  
+  // Fallback to custom domain for any other case
+  return 'www.ai-artify.xyz';
+}
+
+function getMetaMaskDeeplink() {
+  const dappUrl = getDappUrl();
+  // Use the standard MetaMask deeplink format
+  // Important: No protocol, no encoding, no trailing slashes
+  return `https://metamask.app.link/dapp/${dappUrl}`;
 }
 
 export default function UserNav() {
@@ -34,8 +53,8 @@ export default function UserNav() {
     const isMobile = isMobileDevice();
     const hasEthereum = typeof window !== 'undefined' && typeof window.ethereum !== 'undefined';
     if (isMobile && !hasEthereum) {
-      const dappUrl = encodeURIComponent(getDappUrl());
-      const metamaskLink = `https://metamask.app.link/dapp/${dappUrl}`;
+      const metamaskLink = getMetaMaskDeeplink();
+      console.log('MetaMask deeplink generated:', metamaskLink); // Debug log
       return (
         <a href={metamaskLink} target="_blank" rel="noopener noreferrer">
           <Button>
