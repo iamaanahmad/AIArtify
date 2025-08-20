@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import Image from "next/image";
 import { ethers } from "ethers";
 import Link from "next/link";
@@ -42,6 +42,36 @@ interface NftData {
 }
 
 export default function CollectionPage() {
+  return (
+    <Suspense fallback={<CollectionPageSkeleton />}>
+      <CollectionPageContent />
+    </Suspense>
+  );
+}
+
+function CollectionPageSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="h-8 w-64 bg-muted animate-pulse rounded"></div>
+          <div className="h-4 w-96 bg-muted animate-pulse rounded mt-2"></div>
+        </div>
+        <div className="flex gap-2">
+          <div className="h-10 w-20 bg-muted animate-pulse rounded"></div>
+          <div className="h-10 w-24 bg-muted animate-pulse rounded"></div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="aspect-square bg-muted animate-pulse rounded"></div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CollectionPageContent() {
   const { walletAddress, connectWallet, isCorrectNetwork, switchToMetisNetwork } = useWallet();
   const searchParams = useSearchParams();
   const ownerParam = searchParams.get('owner');
