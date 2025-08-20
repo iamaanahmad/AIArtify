@@ -57,12 +57,15 @@ export default function UserNav() {
       const metamaskLink = getMetaMaskDeeplink();
       console.log('MetaMask deeplink generated:', metamaskLink); // Debug log
       return (
-        <a href={metamaskLink} target="_blank" rel="noopener noreferrer">
-          <Button>
-            <Wallet className="mr-0 sm:mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Open in MetaMask App</span>
-          </Button>
-        </a>
+        <div className="flex items-center gap-2">
+          <FaucetInfo />
+          <a href={metamaskLink} target="_blank" rel="noopener noreferrer">
+            <Button>
+              <Wallet className="mr-0 sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Open in MetaMask App</span>
+            </Button>
+          </a>
+        </div>
       );
     }
     // Otherwise, show normal connect button with faucet info
