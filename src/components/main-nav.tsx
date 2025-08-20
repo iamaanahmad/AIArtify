@@ -23,7 +23,7 @@ import {
   SidebarGroupContent,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 const coreItems = [
   { href: "/", label: "Generate Art", icon: Wand2 },
@@ -44,28 +44,45 @@ const competitiveItems = [
 export default function MainNav() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const previousPathname = useRef(pathname);
 
-  // Auto-close sidebar on mobile when navigating to a new page
+  // Helper function to check if we're on mobile
+  const isMobileDevice = () => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 768; // Mobile breakpoint
+  };
+
+  // Auto-close sidebar on mobile ONLY when pathname actually changes (navigation completed)
+  useEffect(() => {
+    // Only close if we're on mobile and the pathname has actually changed
+    if (isMobileDevice() && pathname !== previousPathname.current) {
+      console.log('📱 Mobile navigation detected, closing sidebar');
+      // Small delay to ensure smooth transition
+      setTimeout(() => setOpenMobile(false), 150);
+      previousPathname.current = pathname;
+    }
+  }, [pathname, setOpenMobile]);
+
+  // Handle window resize to close sidebar if resized to mobile
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) { // Mobile breakpoint
+      if (isMobileDevice()) {
+        // Only close if user manually resizes to mobile while sidebar is likely open
+        console.log('📱 Window resized to mobile, closing sidebar');
         setOpenMobile(false);
       }
     };
 
-    // Close sidebar when route changes on mobile
-    if (window.innerWidth < 768) {
-      setOpenMobile(false);
-    }
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [pathname, setOpenMobile]);
+  }, [setOpenMobile]);
 
-  const handleNavClick = () => {
-    // Auto-close sidebar on mobile when clicking navigation items
-    if (window.innerWidth < 768) {
-      setTimeout(() => setOpenMobile(false), 100); // Small delay for smooth UX
+  // Handle navigation click - let the navigation happen naturally
+  const handleNavClick = (href: string) => {
+    // Only set up mobile close if we're actually navigating to a different page
+    if (isMobileDevice() && pathname !== href) {
+      console.log('📱 Navigation initiated on mobile to:', href);
+      // Don't close immediately - let useEffect handle it after route change
     }
   };
 
@@ -87,9 +104,8 @@ export default function MainNav() {
                   tooltip={{
                     children: item.label,
                   }}
-                  onClick={handleNavClick}
                 >
-                  <Link href={item.href}>
+                  <Link href={item.href} onClick={() => handleNavClick(item.href)}>
                     <item.icon />
                     <span>{item.label}</span>
                   </Link>
@@ -116,9 +132,8 @@ export default function MainNav() {
                   tooltip={{
                     children: item.label,
                   }}
-                  onClick={handleNavClick}
                 >
-                  <Link href={item.href}>
+                  <Link href={item.href} onClick={() => handleNavClick(item.href)}>
                     <item.icon />
                     <span>{item.label}</span>
                   </Link>
@@ -145,9 +160,8 @@ export default function MainNav() {
                   tooltip={{
                     children: item.label,
                   }}
-                  onClick={handleNavClick}
                 >
-                  <Link href={item.href}>
+                  <Link href={item.href} onClick={() => handleNavClick(item.href)}>
                     <item.icon />
                     <span>{item.label}</span>
                   </Link>

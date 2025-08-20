@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { useWallet } from "@/hooks/use-wallet";
 import { contractConfig } from "@/lib/web3/config";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Wallet, Grid, List, Filter, Plus, BarChart3, Share2 } from "lucide-react";
+import { Wallet, Grid, List, Filter, Plus, BarChart3, Share2, ExternalLink } from "lucide-react";
 import { getRpcProvider, safeContractCall, queryEventsInChunks, tokenExists, getTokenMetadata } from "@/lib/web3/utils";
 import { getNftsForWallet, getNftByTokenId, storeNftMetadata } from "@/lib/nft-storage";
 import { recoverNftMetadataFromTx } from "@/lib/metadata-recovery";
@@ -656,9 +656,9 @@ function CollectionPageContent() {
                         </div>
                         <div>
                           {nft.txHash && (
-                            <Button variant="link" size="sm" className="h-auto p-0" asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild title="View transaction on Metis Explorer">
                               <Link href={`https://hyperion-testnet-explorer.metisdevops.link/tx/${nft.txHash}`} target="_blank">
-                                View on Explorer
+                                <ExternalLink className="h-4 w-4" />
                               </Link>
                             </Button>
                           )}
@@ -832,9 +832,9 @@ function CollectionPageContent() {
                       </div>
                       <div>
                         {nft.txHash && (
-                          <Button variant="link" size="sm" className="h-auto p-0" asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild title="View transaction on Metis Explorer">
                             <Link href={`https://hyperion-testnet-explorer.metisdevops.link/tx/${nft.txHash}`} target="_blank">
-                              View on Explorer
+                              <ExternalLink className="h-4 w-4" />
                             </Link>
                           </Button>
                         )}

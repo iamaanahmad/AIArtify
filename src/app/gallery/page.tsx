@@ -222,28 +222,37 @@ export default function GalleryPage() {
 
   const [shareNft, setShareNft] = useState<PublicNftData | null>(null);
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">
+    <div className="space-y-8 animate-fade-in-up">
+      <div className="text-center space-y-4">
+        <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
           Public Gallery
         </h1>
-        <p className="mt-2 text-lg text-muted-foreground">
+        <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
           Explore the incredible creations from the AIArtify community, stored forever on-chain.
         </p>
+        {!isLoading && !error && nfts.length > 0 && (
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground animate-fade-in-up animation-delay-200">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <span>{nfts.length} artworks on display</span>
+          </div>
+        )}
       </div>
 
       {isLoading && (
-         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-fade-in-up animation-delay-300">
             {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                    <Skeleton className="aspect-square w-full" />
+                <Card key={i} className="overflow-hidden group hover-scale">
+                    <Skeleton className="aspect-square w-full skeleton-pulse" />
                     <CardHeader className="p-4">
-                        <Skeleton className="h-5 w-4/5" />
+                        <Skeleton className="h-5 w-4/5 skeleton-pulse" />
                     </CardHeader>
                     <CardFooter className="p-4 pt-0">
                         <div className="flex w-full items-center gap-2">
-                           <Skeleton className="h-6 w-6 rounded-full" />
-                           <Skeleton className="h-4 w-1/3" />
+                           <Skeleton className="h-6 w-6 rounded-full skeleton-pulse" />
+                           <Skeleton className="h-4 w-1/3 skeleton-pulse" />
                         </div>
                     </CardFooter>
                 </Card>
@@ -271,9 +280,9 @@ export default function GalleryPage() {
       
       {!isLoading && !error && nfts.length > 0 && (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {nfts.map((nft) => (
-              <Card key={nft.id} className="overflow-hidden relative group">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-fade-in-up animation-delay-400">
+            {nfts.map((nft, index) => (
+              <Card key={nft.id} className="overflow-hidden relative group hover-scale hover-glow transition-all duration-300" style={{animationDelay: `${(index % 8) * 100}ms`}}>
                 <CardContent className="p-0">
                   <div className="relative">
                     <Image
@@ -281,46 +290,60 @@ export default function GalleryPage() {
                       alt={nft.title}
                       width={600}
                       height={600}
-                      className="aspect-square w-full object-cover transition-transform duration-300 hover:scale-105"
+                      className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-110"
                       unoptimized
                     />
+                    {/* Enhanced overlay effects */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
                             type="button"
-                            className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white shadow rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-3 right-3 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 backdrop-blur-sm"
                             aria-label="Share NFT"
                             onClick={() => setShareNft(nft)}
                           >
-                            <Share2 className="w-5 h-5 text-blue-600" />
+                            <Share2 className="w-4 h-4 text-blue-600" />
                           </button>
                         </TooltipTrigger>
-                        <TooltipContent>Share this NFT</TooltipContent>
+                        <TooltipContent side="left">Share this artwork</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
+                    
+                    {/* AI Generated badge */}
+                    <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="bg-purple-500/90 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1">
+                        <span>✨</span>
+                        <span className="hidden sm:inline">AI Generated</span>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
                 <CardHeader className="p-4">
-                  <CardTitle className="truncate text-base">{nft.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground truncate">{nft.prompt}</p>
+                  <CardTitle className="truncate text-base group-hover:text-purple-600 transition-colors duration-300">{nft.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground truncate group-hover:text-muted-foreground/80 transition-colors duration-300">{nft.prompt}</p>
                 </CardHeader>
                 <CardFooter className="p-4 pt-0">
                   <div className="flex w-full items-center justify-between">
                     <Link 
                       href={`/collection?owner=${nft.creatorAddress}`}
-                      className="flex items-center gap-2 hover:bg-muted/50 rounded p-1 transition-colors"
+                      className="flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-950/30 rounded-lg p-2 transition-all duration-300 hover:scale-105 group/creator"
                       title={`View ${nft.creator}'s collection`}
                     >
-                      <Avatar className="h-6 w-6">
+                      <Avatar className="h-6 w-6 ring-2 ring-transparent group-hover/creator:ring-purple-300 transition-all duration-300">
                         <AvatarImage src={nft.avatarUrl} alt={nft.creator} />
-                        <AvatarFallback>{nft.creator.substring(0,2)}</AvatarFallback>
+                        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-xs">
+                          {nft.creator.substring(0,2)}
+                        </AvatarFallback>
                       </Avatar>
-                      <span className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      <span className="text-xs text-muted-foreground group-hover/creator:text-purple-600 transition-colors duration-300 font-medium">
                         by {nft.creator}
                       </span>
                     </Link>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-full">
                       #{nft.id}
                     </div>
                   </div>
