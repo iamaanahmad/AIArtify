@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ethers } from "ethers";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import SocialShare from "@/components/social-share";
@@ -25,6 +26,7 @@ interface NftMetadata {
 interface PublicNftData {
   id: string;
   creator: string;
+  creatorAddress: string; // Full address for linking
   title: string;
   prompt: string;
   imageUrl: string;
@@ -65,7 +67,8 @@ export default function GalleryPage() {
           const localNfts = getStoredNfts();
           const localPublicNfts = localNfts.map((nft, index) => ({
             id: nft.tokenId,
-            creator: nft.walletAddress,
+            creator: `${nft.walletAddress.substring(0, 6)}...${nft.walletAddress.substring(nft.walletAddress.length - 4)}`,
+            creatorAddress: nft.walletAddress,
             title: nft.name,
             prompt: nft.originalPrompt || nft.refinedPrompt || "AI Generated Artwork",
             imageUrl: nft.image,
@@ -178,6 +181,7 @@ export default function GalleryPage() {
             const publicNft: PublicNftData = {
               id: tokenId.toString(),
               creator: `${currentOwner.substring(0, 6)}...${currentOwner.substring(currentOwner.length - 4)}`,
+              creatorAddress: currentOwner,
               title: metadata.name,
               prompt: metadata.attributes?.find((attr: any) => attr.trait_type === "Refined Prompt")?.value || 
                      metadata.attributes?.find((attr: any) => attr.trait_type === "Original Prompt")?.value || 
@@ -302,12 +306,23 @@ export default function GalleryPage() {
                   <p className="text-sm text-muted-foreground truncate">{nft.prompt}</p>
                 </CardHeader>
                 <CardFooter className="p-4 pt-0">
-                  <div className="flex w-full items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={nft.avatarUrl} alt={nft.creator} />
-                      <AvatarFallback>{nft.creator.substring(0,2)}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs text-muted-foreground">by {nft.creator}</span>
+                  <div className="flex w-full items-center justify-between">
+                    <Link 
+                      href={`/collection?owner=${nft.creatorAddress}`}
+                      className="flex items-center gap-2 hover:bg-muted/50 rounded p-1 transition-colors"
+                      title={`View ${nft.creator}'s collection`}
+                    >
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={nft.avatarUrl} alt={nft.creator} />
+                        <AvatarFallback>{nft.creator.substring(0,2)}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        by {nft.creator}
+                      </span>
+                    </Link>
+                    <div className="text-xs text-muted-foreground">
+                      #{nft.id}
+                    </div>
                   </div>
                 </CardFooter>
               </Card>

@@ -21,7 +21,9 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { useEffect } from "react";
 
 const coreItems = [
   { href: "/", label: "Generate Art", icon: Wand2 },
@@ -41,6 +43,31 @@ const competitiveItems = [
 
 export default function MainNav() {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+
+  // Auto-close sidebar on mobile when navigating to a new page
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) { // Mobile breakpoint
+        setOpenMobile(false);
+      }
+    };
+
+    // Close sidebar when route changes on mobile
+    if (window.innerWidth < 768) {
+      setOpenMobile(false);
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [pathname, setOpenMobile]);
+
+  const handleNavClick = () => {
+    // Auto-close sidebar on mobile when clicking navigation items
+    if (window.innerWidth < 768) {
+      setTimeout(() => setOpenMobile(false), 100); // Small delay for smooth UX
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -60,6 +87,7 @@ export default function MainNav() {
                   tooltip={{
                     children: item.label,
                   }}
+                  onClick={handleNavClick}
                 >
                   <Link href={item.href}>
                     <item.icon />
@@ -88,6 +116,7 @@ export default function MainNav() {
                   tooltip={{
                     children: item.label,
                   }}
+                  onClick={handleNavClick}
                 >
                   <Link href={item.href}>
                     <item.icon />
@@ -116,6 +145,7 @@ export default function MainNav() {
                   tooltip={{
                     children: item.label,
                   }}
+                  onClick={handleNavClick}
                 >
                   <Link href={item.href}>
                     <item.icon />

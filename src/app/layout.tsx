@@ -3,9 +3,10 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import MainNav from '@/components/main-nav';
 import UserNav from '@/components/user-nav';
+import SocialLinks from '@/components/social-links';
 import { Icons } from '@/components/icons';
 import Link from 'next/link';
 
@@ -104,6 +105,11 @@ export default function RootLayout({
             <SidebarContent>
               <MainNav />
             </SidebarContent>
+            <SidebarFooter>
+              <div className="p-4 border-t">
+                <SocialLinks variant="compact" />
+              </div>
+            </SidebarFooter>
           </Sidebar>
           <SidebarInset>
             <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
@@ -155,8 +161,15 @@ export default function RootLayout({
                 
                 // Show custom install button after a delay
                 setTimeout(function() {
+                  // Check if user has already dismissed the prompt in this session
+                  if (sessionStorage.getItem('pwaPromptDismissed') === 'true') {
+                    console.log('[PWA] Install prompt already dismissed in this session');
+                    return;
+                  }
+                  
                   if (deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
                     const installBanner = document.createElement('div');
+                    installBanner.id = 'pwa-install-banner';
                     installBanner.innerHTML = \`
                       <div style="
                         position: fixed; 
@@ -209,12 +222,27 @@ export default function RootLayout({
                       deferredPrompt.userChoice.then(function(choiceResult) {
                         console.log('[PWA] Install prompt result:', choiceResult.outcome);
                         deferredPrompt = null;
-                        document.body.removeChild(installBanner);
+                        try {
+                          if (document.body.contains(installBanner)) {
+                            document.body.removeChild(installBanner);
+                          }
+                        } catch (e) {
+                          console.log('[PWA] Banner already removed');
+                        }
                       });
                     });
                     
                     document.getElementById('dismiss-btn').addEventListener('click', function() {
-                      document.body.removeChild(installBanner);
+                      try {
+                        if (document.body.contains(installBanner)) {
+                          document.body.removeChild(installBanner);
+                          console.log('[PWA] Install banner dismissed by user');
+                        }
+                      } catch (e) {
+                        console.log('[PWA] Error removing banner:', e);
+                      }
+                      // Mark as dismissed so it doesn't show again in this session
+                      sessionStorage.setItem('pwaPromptDismissed', 'true');
                     });
                   }
                 }, 3000); // Show after 3 seconds

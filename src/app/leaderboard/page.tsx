@@ -3,12 +3,21 @@
 
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { Award, Gem, Medal, Trophy, Sparkles, Calendar, TrendingUp } from "lucide-react";
+import { Award, Gem, Medal, Trophy, Sparkles, Calendar, TrendingUp, Info, HelpCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { contractConfig } from "@/lib/web3/config";
 import { getRpcProvider, safeContractCall } from "@/lib/web3/utils";
@@ -269,9 +278,65 @@ export default function LeaderboardPage() {
 
       <Card className="w-full sm:rounded-none">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            Top Creators
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5" />
+              Top Creators
+            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <HelpCircle className="h-4 w-4 mr-2" />
+                  Scoring Rules
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Info className="h-5 w-5" />
+                    Leaderboard Scoring System
+                  </DialogTitle>
+                  <DialogDescription>
+                    Understanding how creator rankings are calculated
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2">🎯 Quality Scoring (Per NFT)</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• Base Score: 50 points</li>
+                      <li>• AI Enhancement (Alith refined): +20 points</li>
+                      <li>• Has AI reasoning: +15 points</li>
+                      <li>• Prompt complexity: +0 to 15 points</li>
+                      <li>• Recent creation bonus: +0 to 10 points</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-2">🏆 Final Ranking</h4>
+                    <ol className="text-sm space-y-1 text-muted-foreground">
+                      <li>1. Total Points (Quality × Quantity)</li>
+                      <li>2. Average Quality Score</li>
+                      <li>3. NFT Count (if tied)</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-2">🎖️ Badge System</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• <strong>Quality Master:</strong> 80+ avg score</li>
+                      <li>• <strong>Prolific Creator:</strong> 10+ NFTs</li>
+                      <li>• <strong>Veteran Artist:</strong> 30+ days active</li>
+                      <li>• <strong>Recently Active:</strong> Active today</li>
+                    </ul>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
+                    <p className="text-sm">
+                      <strong>💡 AI vs Uploaded:</strong> Only blockchain-verified NFTs with original AI generation count. 
+                      All artworks shown are created through our AI generation system and minted on Metis Hyperion.
+                    </p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </CardTitle>
           <CardDescription>
             Rankings based on quality scores, creativity, and consistency. Points awarded for AI-enhanced prompts, complexity, and recent activity.

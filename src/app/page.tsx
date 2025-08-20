@@ -24,6 +24,7 @@ import { ToastAction } from "@/components/ui/toast";
 import ExternalArtUpload from "@/components/external-art-upload";
 import SocialShare from "@/components/social-share";
 import AnalyticsDashboard from "@/components/analytics-dashboard";
+import LazAIInfo from "@/components/lazai-info";
 import LazAIVerification from "@/components/lazai-verification";
 import ConsensusBreakdown from "@/components/consensus-breakdown";
 import { useAnalytics } from "@/lib/analytics";
@@ -373,7 +374,9 @@ export default function GeneratePage() {
         const hostedImageUrl = await uploadImageToImgBB(imageUrl);
 
         setMintingStep("Step 2/3: Creating On-Chain Metadata...");
-        const metadata = {
+        
+        // Create full metadata for local storage
+        const fullMetadata = {
             name: refinedResult?.title || externalMetadata?.title || "AIArtify NFT",
             description: externalMetadata?.description || `An AI-generated artwork from AIArtify, enhanced with LazAI reasoning.`,
             image: hostedImageUrl, // Use the public URL from the image host
@@ -438,15 +441,50 @@ export default function GeneratePage() {
             ]
         };
 
-        // Encode the metadata to a Base64 data URI
-        const metadataJson = JSON.stringify(metadata);
+        // Create optimized metadata for blockchain storage
+        const maxPromptLength = 150;
+        const maxReasoningLength = 100;
+        
+        const optimizedMetadata = {
+            name: fullMetadata.name,
+            description: "AI artwork from AIArtify with LazAI",
+            image: fullMetadata.image,
+            attributes: [
+              {
+                trait_type: "Original Prompt",
+                value: prompt.length > maxPromptLength ? prompt.slice(0, maxPromptLength) + "..." : prompt,
+              },
+              {
+                trait_type: "Refined Prompt", 
+                value: (refinedResult?.refinedPrompt || prompt).length > maxPromptLength ? 
+                       (refinedResult?.refinedPrompt || prompt).slice(0, maxPromptLength) + "..." : 
+                       (refinedResult?.refinedPrompt || prompt),
+              },
+              {
+                trait_type: "AI Enhanced",
+                value: refinedResult?.reasoning ? "true" : "false",
+              },
+              {
+                trait_type: "LazAI Verified",
+                value: refinedResult?.lazaiReasoning ? "true" : "false",
+              },
+              {
+                trait_type: "Art Type",
+                value: externalMetadata ? "External Upload" : "AI Generated",
+              }
+            ]
+        };
+
+        // Encode the optimized metadata to a Base64 data URI for blockchain
+        const metadataJson = JSON.stringify(optimizedMetadata);
         const base64Metadata = Buffer.from(metadataJson).toString('base64');
         const tokenURI = `data:application/json;base64,${base64Metadata}`;
         
         // Debug: Log the metadata and tokenURI we're about to send
         console.log('=== MINTING DEBUG ===');
-        console.log('Metadata object:', metadata);
-        console.log('Metadata JSON:', metadataJson);
+        console.log('Full metadata object:', fullMetadata);
+        console.log('Optimized metadata object:', optimizedMetadata);
+        console.log('Optimized metadata JSON:', metadataJson);
         console.log('Base64 metadata length:', base64Metadata.length);
         console.log('TokenURI length:', tokenURI.length);
         console.log('TokenURI preview:', tokenURI.substring(0, 100) + '...');
@@ -469,16 +507,21 @@ export default function GeneratePage() {
         // We no longer need to estimate gas manually if the transaction is simple
         console.log('Calling mintNFT with params:', { to: walletAddress, tokenURI: tokenURI.substring(0, 50) + '...' });
         
-        // Enhanced gas estimation and transaction handling
+        // Enhanced gas estimation and transaction handling with production safeguards
         let transaction;
         try {
-          // First check if we can estimate gas
+          // First verify contract exists and is accessible
+          console.log('Verifying contract accessibility...');
+          const contractOwner = await contract.owner();
+          console.log('Contract owner:', contractOwner);
+          
+          // Check if we can estimate gas
           console.log('Estimating gas for transaction...');
           const gasEstimate = await contract.mintNFT.estimateGas(walletAddress, tokenURI);
           console.log('Gas estimate:', gasEstimate.toString());
           
-          // Add some buffer to the gas estimate (20% more)
-          const gasLimit = gasEstimate * BigInt(120) / BigInt(100);
+          // Add buffer to the gas estimate (50% more for safety in production)
+          const gasLimit = gasEstimate * BigInt(150) / BigInt(100);
           console.log('Gas limit with buffer:', gasLimit.toString());
           
           // Execute the transaction with proper gas settings
@@ -488,19 +531,24 @@ export default function GeneratePage() {
           
           console.log('Transaction submitted:', transaction.hash);
         } catch (gasError: any) {
-          console.warn('Gas estimation failed, trying with fallback gas:', gasError.message);
+          console.warn('Gas estimation failed, trying with fallback approach:', gasError.message);
+          
+          // Check if it's a specific error we can handle
+          if (gasError.message.includes('revert') || gasError.message.includes('execution reverted')) {
+            throw new Error('Contract call would fail. This might be due to metadata size limits or contract restrictions.');
+          }
           
           // Fallback: try without gas estimation but with a reasonable gas limit
           try {
             transaction = await contract.mintNFT(walletAddress, tokenURI, {
-              gasLimit: 500000, // 500k gas should be enough for most NFT mints
+              gasLimit: 800000, // Increased gas limit for production
             });
             
             console.log('Transaction submitted with fallback gas:', transaction.hash);
           } catch (fallbackError: any) {
-            console.warn('Fallback gas failed, trying without gas limit:', fallbackError.message);
+            console.warn('Fallback gas failed, trying minimal approach:', fallbackError.message);
             
-            // Final fallback: let the provider handle gas estimation
+            // Final fallback: let the provider handle everything
             transaction = await contract.mintNFT(walletAddress, tokenURI);
             console.log('Transaction submitted without gas limit:', transaction.hash);
           }
@@ -519,18 +567,19 @@ export default function GeneratePage() {
         
         // CRITICAL: Store NFT immediately with transaction hash as fallback ID
         // This ensures the NFT is saved even if tokenId extraction fails
+        // Store FULL metadata locally, not the optimized version
         const fallbackNftMetadata = {
           tokenId: `tx_${receipt.hash.slice(-8)}`, // Use last 8 chars of tx hash as fallback ID
-          name: metadata.name,
-          description: metadata.description,
-          image: metadata.image,
-          originalPrompt: metadata.attributes.find(attr => attr.trait_type === "Original Prompt")?.value || "",
-          refinedPrompt: metadata.attributes.find(attr => attr.trait_type === "Refined Prompt")?.value || "",
-          reasoning: metadata.attributes.find(attr => attr.trait_type === "Alith's Reasoning")?.value || "",
-          lazaiReasoning: metadata.attributes.find(attr => attr.trait_type === "LazAI Reasoning")?.value || "",
-          lazaiModel: metadata.attributes.find(attr => attr.trait_type === "LazAI Model")?.value || "",
-          lazaiConfidence: metadata.attributes.find(attr => attr.trait_type === "LazAI Confidence")?.value || "",
-          lazaiTxHash: metadata.attributes.find(attr => attr.trait_type === "LazAI Transaction")?.value || "",
+          name: fullMetadata.name,
+          description: fullMetadata.description,
+          image: fullMetadata.image,
+          originalPrompt: fullMetadata.attributes.find(attr => attr.trait_type === "Original Prompt")?.value || "",
+          refinedPrompt: fullMetadata.attributes.find(attr => attr.trait_type === "Refined Prompt")?.value || "",
+          reasoning: fullMetadata.attributes.find(attr => attr.trait_type === "Alith's Reasoning")?.value || "",
+          lazaiReasoning: fullMetadata.attributes.find(attr => attr.trait_type === "LazAI Reasoning")?.value || "",
+          lazaiModel: fullMetadata.attributes.find(attr => attr.trait_type === "LazAI Model")?.value || "",
+          lazaiConfidence: fullMetadata.attributes.find(attr => attr.trait_type === "LazAI Confidence")?.value || "",
+          lazaiTxHash: fullMetadata.attributes.find(attr => attr.trait_type === "LazAI Transaction")?.value || "",
           txHash: receipt.hash,
           mintedAt: Date.now(),
           walletAddress: walletAddress!
@@ -556,20 +605,21 @@ export default function GeneratePage() {
             console.log('Minted token ID:', tokenId?.toString());
             
             // Update the NFT with the proper tokenId (this will replace the fallback entry)
+            // Store FULL metadata locally with proper tokenId
             if (tokenId) {
               const nftMetadata = {
                 tokenId: tokenId.toString(),
-                name: metadata.name,
-                description: metadata.description,
-                image: metadata.image,
-                originalPrompt: metadata.attributes.find(attr => attr.trait_type === "Original Prompt")?.value || "",
-                refinedPrompt: metadata.attributes.find(attr => attr.trait_type === "Refined Prompt")?.value || "",
-                reasoning: metadata.attributes.find(attr => attr.trait_type === "Alith's Reasoning")?.value || "",
+                name: fullMetadata.name,
+                description: fullMetadata.description,
+                image: fullMetadata.image,
+                originalPrompt: fullMetadata.attributes.find(attr => attr.trait_type === "Original Prompt")?.value || "",
+                refinedPrompt: fullMetadata.attributes.find(attr => attr.trait_type === "Refined Prompt")?.value || "",
+                reasoning: fullMetadata.attributes.find(attr => attr.trait_type === "Alith's Reasoning")?.value || "",
                 // BONUS TRACK: Store LazAI reasoning data in local metadata
-                lazaiReasoning: metadata.attributes.find(attr => attr.trait_type === "LazAI Reasoning")?.value || "",
-                lazaiModel: metadata.attributes.find(attr => attr.trait_type === "LazAI Model")?.value || "",
-                lazaiConfidence: metadata.attributes.find(attr => attr.trait_type === "LazAI Confidence")?.value || "",
-                lazaiTxHash: metadata.attributes.find(attr => attr.trait_type === "LazAI Transaction")?.value || "",
+                lazaiReasoning: fullMetadata.attributes.find(attr => attr.trait_type === "LazAI Reasoning")?.value || "",
+                lazaiModel: fullMetadata.attributes.find(attr => attr.trait_type === "LazAI Model")?.value || "",
+                lazaiConfidence: fullMetadata.attributes.find(attr => attr.trait_type === "LazAI Confidence")?.value || "",
+                lazaiTxHash: fullMetadata.attributes.find(attr => attr.trait_type === "LazAI Transaction")?.value || "",
                 txHash: receipt.hash,
                 mintedAt: Date.now(),
                 walletAddress: walletAddress!
@@ -849,6 +899,7 @@ export default function GeneratePage() {
                   <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-blue-600 dark:text-blue-400 font-semibold">🚀 LazAI Enhanced Reasoning:</span>
+                      <LazAIInfo />
                       {refinedResult.lazaiModel && (
                         <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
                           {refinedResult.lazaiModel}

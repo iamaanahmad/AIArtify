@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "./ui/button";
 import { Gem, LifeBuoy, LogOut, User, Wallet } from "lucide-react";
 import { useWallet } from "@/hooks/use-wallet";
+import FaucetInfo from "./faucet-info";
 
 function isMobileDevice() {
   if (typeof window === 'undefined') return false;
@@ -64,12 +65,15 @@ export default function UserNav() {
         </a>
       );
     }
-    // Otherwise, show normal connect button
+    // Otherwise, show normal connect button with faucet info
     return (
-      <Button onClick={connectWallet}>
-        <Wallet className="mr-0 sm:mr-2 h-4 w-4" />
-        <span className="hidden sm:inline">Connect Wallet</span>
-      </Button>
+      <div className="flex items-center gap-2">
+        <FaucetInfo />
+        <Button onClick={connectWallet}>
+          <Wallet className="mr-0 sm:mr-2 h-4 w-4" />
+          <span className="hidden sm:inline">Connect Wallet</span>
+        </Button>
+      </div>
     );
   }
 

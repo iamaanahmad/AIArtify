@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { ethers } from "ethers";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +23,7 @@ import { type ArtworkItem, type ArtCollection } from "@/lib/collection-manager";
 import AnalyticsDashboard from "@/components/analytics-dashboard";
 import ConsensusBreakdown from "@/components/consensus-breakdown";
 import LazAIVerification from "@/components/lazai-verification";
+import CollectionSocialShare from "@/components/collection-social-share";
 import { useToast } from "@/hooks/use-toast";
 
 interface NftMetadata {
@@ -41,6 +43,11 @@ interface NftData {
 
 export default function CollectionPage() {
   const { walletAddress, connectWallet, isCorrectNetwork, switchToMetisNetwork } = useWallet();
+  const searchParams = useSearchParams();
+  const ownerParam = searchParams.get('owner');
+  const isViewingOtherUser = ownerParam && ownerParam.toLowerCase() !== walletAddress?.toLowerCase();
+  const displayAddress = isViewingOtherUser ? ownerParam : walletAddress;
+  
   const [nfts, setNfts] = useState<NftData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -269,14 +276,16 @@ export default function CollectionPage() {
   }, []);
 
   useEffect(() => {
-    if (walletAddress) {
-      fetchNfts(walletAddress);
-      // Phase 4: Load collections and artworks
-      loadCollectionData();
+    if (displayAddress) {
+      fetchNfts(displayAddress);
+      // Only load collection management for own wallet
+      if (!isViewingOtherUser) {
+        loadCollectionData();
+      }
     } else {
       setIsLoading(false); // Not loading if there's no wallet
     }
-  }, [walletAddress, fetchNfts]);
+  }, [displayAddress, fetchNfts, isViewingOtherUser]);
   
   // Phase 4: Load collection management data
   const loadCollectionData = () => {
@@ -360,7 +369,7 @@ export default function CollectionPage() {
     loadCollectionData();
   };
 
-  if (!walletAddress) {
+  if (!displayAddress) {
       return (
           <div className="flex h-64 w-full items-center justify-center rounded-lg border-2 border-dashed">
               <div className="text-center">
@@ -422,27 +431,32 @@ export default function CollectionPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">
-            My Collection
+            {isViewingOtherUser ? `Collection by ${ownerParam?.substring(0, 6)}...${ownerParam?.substring(ownerParam.length - 4)}` : "My Collection"}
           </h1>
           <p className="mt-2 text-lg text-muted-foreground">
-            Manage your AI artworks, create collections, and view analytics.
+            {isViewingOtherUser 
+              ? "Explore this creator's AI artworks and NFT collection." 
+              : "Manage your AI artworks, create collections, and view analytics."
+            }
           </p>
         </div>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            onClick={() => fetchNfts(walletAddress!)}
+            onClick={() => fetchNfts(displayAddress!)}
             disabled={isLoading}
           >
             {isLoading ? "Loading..." : "Refresh"}
           </Button>
-          <Button 
-            variant="outline"
-            onClick={loadCollectionData}
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Sync Data
-          </Button>
+          {!isViewingOtherUser && (
+            <Button 
+              variant="outline"
+              onClick={loadCollectionData}
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Sync Data
+            </Button>
+          )}
         </div>
       </div>
 
@@ -458,22 +472,23 @@ export default function CollectionPage() {
         </Alert>
       )}
 
-      {/* Phase 4: Enhanced Collection Interface */}
-      <Tabs value={currentView} onValueChange={(value: any) => setCurrentView(value)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="nfts" className="flex items-center gap-2">
-            <Grid className="w-4 h-4" />
-            NFTs ({nfts.length})
-          </TabsTrigger>
-          <TabsTrigger value="collections" className="flex items-center gap-2">
-            <Filter className="w-4 h-4" />
-            Collections ({collections.length})
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            Analytics
-          </TabsTrigger>
-        </TabsList>
+      {/* Enhanced Collection Interface - Only show for own collection */}
+      {!isViewingOtherUser ? (
+        <Tabs value={currentView} onValueChange={(value: any) => setCurrentView(value)} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="nfts" className="flex items-center gap-2">
+              <Grid className="w-4 h-4" />
+              NFTs ({nfts.length})
+            </TabsTrigger>
+            <TabsTrigger value="collections" className="flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              Collections ({collections.length})
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
 
         <TabsContent value="nfts" className="space-y-6">
           {/* Selection Tools */}
@@ -603,6 +618,11 @@ export default function CollectionPage() {
                               });
                             }}
                           />
+                          {/* Collection Social Sharing */}
+                          <CollectionSocialShare
+                            nft={nft}
+                            variant="icon"
+                          />
                         </div>
                         <div>
                           {nft.txHash && (
@@ -713,6 +733,97 @@ export default function CollectionPage() {
           }} />
         </TabsContent>
       </Tabs>
+      ) : (
+        /* Simple grid view for other users' collections */
+        <div className="space-y-6">
+          {/* View Controls */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {nfts.length} NFT{nfts.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+
+          {/* NFTs Grid/List for other users */}
+          {nfts.length > 0 ? (
+            <div className={viewMode === 'grid' 
+              ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              : "space-y-4"
+            }>
+              {nfts.map((nft) => (
+                <Card 
+                  key={nft.id} 
+                  className={`flex ${viewMode === 'list' ? 'flex-row' : 'flex-col'} overflow-hidden transition-all`}
+                >
+                  <CardContent className="p-0">
+                    <Image
+                      src={nft.imageUrl}
+                      alt={nft.title}
+                      width={600}
+                      height={600}
+                      className={`${viewMode === 'list' ? 'w-24 h-24' : 'aspect-square w-full'} object-cover transition-transform duration-300 hover:scale-105`}
+                      unoptimized
+                    />
+                  </CardContent>
+                  <div className="flex-1">
+                    <CardHeader className={`flex-grow ${viewMode === 'list' ? 'p-4' : 'p-4'}`}>
+                      <CardTitle className="truncate text-base">
+                        {nft.title}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {nft.prompt}
+                      </p>
+                      <CardFooter className="p-0 pt-2 text-xs text-muted-foreground">
+                        Token ID: {nft.id}
+                      </CardFooter>
+                    </CardHeader>
+                    <CardFooter className={`flex justify-between ${viewMode === 'list' ? 'p-4' : 'p-4 pt-0'}`}>
+                      <div className="flex gap-2">
+                        {/* Social sharing for other users' NFTs */}
+                        <CollectionSocialShare
+                          nft={nft}
+                          variant="icon"
+                        />
+                      </div>
+                      <div>
+                        {nft.txHash && (
+                          <Button variant="link" size="sm" className="h-auto p-0" asChild>
+                            <Link href={`https://hyperion-testnet-explorer.metisdevops.link/tx/${nft.txHash}`} target="_blank">
+                              View on Explorer
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
+                    </CardFooter>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold">No NFTs found</h3>
+                <p className="mt-2 text-muted-foreground">This creator hasn't minted any artworks yet.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
