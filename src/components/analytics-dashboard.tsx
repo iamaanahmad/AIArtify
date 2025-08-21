@@ -64,6 +64,9 @@ export default function AnalyticsDashboard({ onRefresh }: AnalyticsDashboardProp
   }
 
   const { kpis, charts, insights } = dashboardData;
+  
+  // Check if we're showing demo data
+  const isDemoMode = kpis[0].value >= 200; // Demo data has higher numbers
 
   return (
     <div className="space-y-6">
@@ -71,9 +74,16 @@ export default function AnalyticsDashboard({ onRefresh }: AnalyticsDashboardProp
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Analytics Dashboard</h2>
-          <p className="text-muted-foreground">
-            Track your AI art generation performance and engagement
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-muted-foreground">
+              Track your AI art generation performance and engagement
+            </p>
+            {isDemoMode && (
+              <Badge variant="secondary" className="text-xs">
+                Demo Data
+              </Badge>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={refreshData} disabled={isLoading}>
