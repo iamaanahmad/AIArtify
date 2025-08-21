@@ -155,19 +155,27 @@ export default function RootLayout({
               
               // Install prompt handling
               let deferredPrompt;
+              
+              // Check if app is already installed
+              function isAppInstalled() {
+                return window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone || 
+                       localStorage.getItem('pwaInstalled') === 'true';
+              }
+              
               window.addEventListener('beforeinstallprompt', function(e) {
                 e.preventDefault();
                 deferredPrompt = e;
                 
                 // Show custom install button after a delay
                 setTimeout(function() {
-                  // Check if user has already dismissed the prompt in this session
-                  if (sessionStorage.getItem('pwaPromptDismissed') === 'true') {
-                    console.log('[PWA] Install prompt already dismissed in this session');
+                  // Check if already installed or dismissed
+                  if (sessionStorage.getItem('pwaPromptDismissed') === 'true' || isAppInstalled()) {
+                    console.log('[PWA] Install prompt skipped - already installed or dismissed');
                     return;
                   }
                   
-                  if (deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
+                  if (deferredPrompt) {
                     const installBanner = document.createElement('div');
                     installBanner.id = 'pwa-install-banner';
                     installBanner.innerHTML = \`
@@ -221,6 +229,9 @@ export default function RootLayout({
                       deferredPrompt.prompt();
                       deferredPrompt.userChoice.then(function(choiceResult) {
                         console.log('[PWA] Install prompt result:', choiceResult.outcome);
+                        if (choiceResult.outcome === 'accepted') {
+                          localStorage.setItem('pwaInstalled', 'true');
+                        }
                         deferredPrompt = null;
                         try {
                           if (document.body.contains(installBanner)) {
@@ -241,8 +252,9 @@ export default function RootLayout({
                       } catch (e) {
                         console.log('[PWA] Error removing banner:', e);
                       }
-                      // Mark as dismissed so it doesn't show again in this session
+                      // Mark as dismissed so it doesn't show again
                       sessionStorage.setItem('pwaPromptDismissed', 'true');
+                      localStorage.setItem('pwaPromptDismissedDate', Date.now().toString());
                     });
                   }
                 }, 3000); // Show after 3 seconds
@@ -251,6 +263,16 @@ export default function RootLayout({
               // Track if app is installed
               window.addEventListener('appinstalled', function(e) {
                 console.log('[PWA] App was installed successfully');
+                localStorage.setItem('pwaInstalled', 'true');
+                // Remove any existing install banners
+                const existingBanner = document.getElementById('pwa-install-banner');
+                if (existingBanner) {
+                  try {
+                    document.body.removeChild(existingBanner);
+                  } catch (e) {
+                    console.log('[PWA] Banner already removed');
+                  }
+                }
                 // Track installation analytics
                 if (typeof gtag !== 'undefined') {
                   gtag('event', 'pwa_install', {

@@ -55,27 +55,55 @@ export default function CollectionSocialShare({ nft, variant = "default" }: Coll
   };
 
   const shareOnTwitter = () => {
+    console.log('Twitter share clicked for NFT:', nft.id);
     const twitterText = `${shareTitle}\n\n${shareDescription}\n\n#AIArt #NFT #MetisHyperion #LazAI\n\n${shareUrl}`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}`;
-    window.open(twitterUrl, '_blank');
+    
+    console.log('Opening Twitter URL:', twitterUrl);
+    
+    // Open in new window/tab
+    const newWindow = window.open(twitterUrl, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
+    
+    if (!newWindow) {
+      // Fallback if popup was blocked
+      console.log('Popup blocked, using fallback');
+      window.location.href = twitterUrl;
+    }
     
     toast({
       title: "Sharing on Twitter!",
       description: "Opening Twitter to share your artwork.",
       duration: 3000,
     });
+    
+    // Close the dialog after sharing
+    setIsOpen(false);
   };
 
   const shareOnTelegram = () => {
+    console.log('Telegram share clicked for NFT:', nft.id);
     const telegramText = `${shareTitle}\n\n${shareDescription}\n\n${shareUrl}`;
     const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(telegramText)}`;
-    window.open(telegramUrl, '_blank');
+    
+    console.log('Opening Telegram URL:', telegramUrl);
+    
+    // Open in new window/tab
+    const newWindow = window.open(telegramUrl, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
+    
+    if (!newWindow) {
+      // Fallback if popup was blocked
+      console.log('Popup blocked, using fallback');
+      window.location.href = telegramUrl;
+    }
     
     toast({
       title: "Sharing on Telegram!",
       description: "Opening Telegram to share your artwork.",
       duration: 3000,
     });
+    
+    // Close the dialog after sharing
+    setIsOpen(false);
   };
 
   const openInExplorer = () => {
@@ -85,23 +113,43 @@ export default function CollectionSocialShare({ nft, variant = "default" }: Coll
   };
 
   const TriggerButton = () => {
+    const handleClick = () => {
+      console.log('Share trigger clicked for NFT:', nft.id);
+      setIsOpen(true);
+    };
+
     switch (variant) {
       case "icon":
         return (
-          <Button variant="outline" size="icon" className="h-8 w-8">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8"
+            onClick={handleClick}
+            type="button"
+          >
             <Share2 className="h-4 w-4" />
           </Button>
         );
       case "compact":
         return (
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleClick}
+            type="button"
+          >
             <Share2 className="h-4 w-4 mr-1" />
             Share
           </Button>
         );
       default:
         return (
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            onClick={handleClick}
+            type="button"
+          >
             <Share2 className="h-4 w-4 mr-2" />
             Share Artwork
           </Button>
@@ -110,20 +158,19 @@ export default function CollectionSocialShare({ nft, variant = "default" }: Coll
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <TriggerButton />
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Share2 className="h-5 w-5" />
-            Share Your Artwork
-          </DialogTitle>
-          <DialogDescription>
-            Share your AI-generated NFT with the community and showcase your creativity.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <TriggerButton />
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5" />
+              Share Your Artwork
+            </DialogTitle>
+            <DialogDescription>
+              Share your AI-generated NFT with the community and showcase your creativity.
+            </DialogDescription>
+          </DialogHeader>
         
         <div className="space-y-4">
           {/* Preview */}
@@ -199,5 +246,6 @@ export default function CollectionSocialShare({ nft, variant = "default" }: Coll
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

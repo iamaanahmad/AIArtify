@@ -961,12 +961,12 @@ export default function GeneratePage() {
               <Badge variant="outline" className="text-xs">Enhanced</Badge>
             </AlertTitle>
             <AlertDescription className="space-y-2">
-                <div className="prose prose-sm max-w-none dark:prose-invert">{processMarkdown(refinedResult.reasoning)}</div>
+                <div className="prose prose-sm max-w-none dark:prose-invert break-words overflow-hidden">{processMarkdown(refinedResult.reasoning)}</div>
                 {/* Enhanced LazAI reasoning display */}
                 {refinedResult.lazaiReasoning && (
-                  <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 border border-blue-200 dark:border-blue-800 rounded-lg relative overflow-hidden">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1">
+                  <div className="mt-4 p-3 md:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 border border-blue-200 dark:border-blue-800 rounded-lg relative overflow-hidden">
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <span className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 text-sm">
                         🚀 LazAI Enhanced Reasoning
                       </span>
                       <LazAIInfo />
@@ -981,15 +981,15 @@ export default function GeneratePage() {
                         </Badge>
                       )}
                     </div>
-                    <div className="text-sm text-blue-700 dark:text-blue-300 prose prose-sm max-w-none dark:prose-invert">{processMarkdown(refinedResult.lazaiReasoning)}</div>
+                    <div className="text-sm text-blue-700 dark:text-blue-300 prose prose-sm max-w-none dark:prose-invert break-words overflow-hidden whitespace-pre-wrap">{processMarkdown(refinedResult.lazaiReasoning)}</div>
                     {refinedResult.lazaiTxHash && (
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-3 flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" />
-                        Reasoning stored on-chain: 
-                        <code className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded font-mono">
+                      <div className="text-xs text-blue-600 dark:text-blue-400 mt-3 flex flex-wrap items-center gap-1">
+                        <CheckCircle className="w-3 h-3 flex-shrink-0" />
+                        <span>Reasoning stored on-chain:</span>
+                        <code className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded font-mono break-all text-xs">
                           {refinedResult.lazaiTxHash.substring(0, 16)}...
                         </code>
-                      </p>
+                      </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
                   </div>

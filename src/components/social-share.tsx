@@ -85,18 +85,38 @@ export default function SocialShare({ shareData, onShare }: SocialShareProps) {
       setIsSharing(true);
       
       if (platformKey === 'export') {
-        // Handle image download/save
-        const link = document.createElement('a');
-        link.href = shareData.imageUrl;
-        link.download = `${shareData.title || 'AI-Art'}-AIArtify.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Enhanced image download/save with proper error handling
+        try {
+          // First try to download the image via fetch to handle CORS
+          const response = await fetch(shareData.imageUrl);
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${shareData.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'AI-Art'}-AIArtify.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+          } else {
+            throw new Error('Failed to fetch image');
+          }
+        } catch (fetchError) {
+          // Fallback: direct link download
+          const link = document.createElement('a');
+          link.href = shareData.imageUrl;
+          link.download = `${shareData.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'AI-Art'}-AIArtify.png`;
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
         
         toast({
-          title: `� Image Saved!`,
-          description: "Artwork downloaded to your device. You can now share it manually on social platforms.",
-          duration: 3000,
+          title: `📱 Image Download Started!`,
+          description: "Your AI artwork is being saved to your device. Share it on your favorite platforms!",
+          duration: 4000,
         });
       } else {
         // Handle social platform sharing with better URL generation

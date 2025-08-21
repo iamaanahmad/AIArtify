@@ -6,8 +6,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { ethers } from "ethers";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 import SocialShare from "@/components/social-share";
-import { Share2 } from "lucide-react";
+import { Share2, MessageCircle, Download } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -221,6 +227,31 @@ export default function GalleryPage() {
   }, []);
 
   const [shareNft, setShareNft] = useState<PublicNftData | null>(null);
+
+  // Direct share function for quick sharing
+  const handleQuickShare = (nft: PublicNftData, platform: 'twitter' | 'telegram') => {
+    const shareUrl = `${window.location.origin}/gallery?highlight=${nft.id}`;
+    const shareTitle = `Check out this amazing AI artwork: "${nft.title}"`;
+    const shareDescription = `Created with AIArtify's advanced AI system. Prompt: "${nft.prompt.slice(0, 100)}${nft.prompt.length > 100 ? '...' : ''}"`;
+    
+    let shareUrlFinal = '';
+    
+    if (platform === 'twitter') {
+      const twitterText = `${shareTitle}\n\n${shareDescription}\n\n#AIArt #NFT #MetisHyperion #LazAI\n\n${shareUrl}`;
+      shareUrlFinal = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}`;
+    } else if (platform === 'telegram') {
+      const telegramText = `${shareTitle}\n\n${shareDescription}\n\n${shareUrl}`;
+      shareUrlFinal = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(telegramText)}`;
+    }
+    
+    // Open in new window
+    const newWindow = window.open(shareUrlFinal, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
+    
+    if (!newWindow) {
+      // Fallback if popup was blocked
+      window.location.href = shareUrlFinal;
+    }
+  };
   return (
     <div className="space-y-8 animate-fade-in-up">
       <div className="text-center space-y-4">
@@ -297,18 +328,45 @@ export default function GalleryPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     
+                    {/* Share dropdown */}
                     <TooltipProvider>
                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            className="absolute top-3 right-3 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 backdrop-blur-sm"
-                            aria-label="Share NFT"
-                            onClick={() => setShareNft(nft)}
-                          >
-                            <Share2 className="w-4 h-4 text-blue-600" />
-                          </button>
-                        </TooltipTrigger>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className="absolute top-3 right-3 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 backdrop-blur-sm"
+                                aria-label="Share NFT"
+                              >
+                                <Share2 className="w-4 h-4 text-blue-600" />
+                              </button>
+                            </TooltipTrigger>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem 
+                              onClick={() => handleQuickShare(nft, 'twitter')}
+                              className="cursor-pointer"
+                            >
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              Share on X (Twitter)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleQuickShare(nft, 'telegram')}
+                              className="cursor-pointer"
+                            >
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              Share on Telegram
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => setShareNft(nft)}
+                              className="cursor-pointer"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              More Options
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <TooltipContent side="left">Share this artwork</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
