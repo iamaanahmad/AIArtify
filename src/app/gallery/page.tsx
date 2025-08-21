@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import SocialShare from "@/components/social-share";
-import { Share2, MessageCircle, Download } from "lucide-react";
+import { Share2, MessageCircle, Download, MoreHorizontal } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -228,21 +228,53 @@ export default function GalleryPage() {
 
   const [shareNft, setShareNft] = useState<PublicNftData | null>(null);
 
-  // Direct share function for quick sharing
+  // Direct share function for quick sharing with engaging captions
   const handleQuickShare = (nft: PublicNftData, platform: 'twitter' | 'telegram') => {
     const shareUrl = `${window.location.origin}/gallery?highlight=${nft.id}`;
-    const shareTitle = `Check out this amazing AI artwork: "${nft.title}"`;
-    const shareDescription = `Created with AIArtify's advanced AI system. Prompt: "${nft.prompt.slice(0, 100)}${nft.prompt.length > 100 ? '...' : ''}"`;
+    const promptSnippet = nft.prompt.length > 60 ? nft.prompt.substring(0, 57) + '...' : nft.prompt;
     
+    // Random engaging captions for viral sharing
+    const viralCaptions = [
+      `🎨 Just discovered this AI masterpiece ✨ What do you think? 👇`,
+      `💫 Mind-blown by this AI art → Check out this creation 🚀`,
+      `👀 This AI artwork is absolutely stunning`,
+      `✨ Found this gem in the AI art gallery`,
+      `🔮 AI + creativity = pure magic. Look at this!`,
+      `🚀 This might be the coolest AI art I've seen`,
+      `🎨 Okay, this AI artist is talented 👀`,
+      `💎 Gallery surfing and found this beauty`
+    ];
+    
+    const baseCaption = viralCaptions[Math.floor(Math.random() * viralCaptions.length)];
+    
+    let shareText = '';
     let shareUrlFinal = '';
     
     if (platform === 'twitter') {
-      const twitterText = `${shareTitle}\n\n${shareDescription}\n\n#AIArt #NFT #MetisHyperion #LazAI\n\n${shareUrl}`;
-      shareUrlFinal = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}`;
+      // X (Twitter) - optimized for engagement and 280 char limit
+      shareText = `${baseCaption}\n\n🖼️ Prompt: "${promptSnippet}"\n\n🔗 Create your own: https://ai-artify.xyz\n\n#AIArtify #AIArt #NFT #MetisHyperion`;
+      
+      // Check length and shorten if needed
+      if (shareText.length > 280) {
+        shareText = `${baseCaption}\n\n🔗 https://ai-artify.xyz\n\n#AIArtify #AIArt #NFT`;
+      }
+      
+      shareUrlFinal = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
     } else if (platform === 'telegram') {
-      const telegramText = `${shareTitle}\n\n${shareDescription}\n\n${shareUrl}`;
-      shareUrlFinal = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(telegramText)}`;
+      // Telegram - more space, include everything
+      shareText = `${baseCaption}\n\n🖼️ Prompt: "${promptSnippet}"\n\n🔗 Create your own: https://ai-artify.xyz\n\n👀 View this piece: ${shareUrl}`;
+      
+      // Add explorer link if available
+      if (nft.txHash && nft.txHash !== 'N/A') {
+        shareText += `\n\n🧾 View on Explorer: https://hyperion-testnet-explorer.metisdevops.link/tx/${nft.txHash}`;
+      }
+      
+      shareText += `\n\n#AIArtify #AIArt #NFT #MetisHyperion #LazAI #Web3Art\n\n💬 Join community: t.me/aiartify`;
+      
+      shareUrlFinal = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
     }
+    
+    console.log(`Sharing to ${platform}:`, shareText);
     
     // Open in new window
     const newWindow = window.open(shareUrlFinal, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
@@ -250,6 +282,47 @@ export default function GalleryPage() {
     if (!newWindow) {
       // Fallback if popup was blocked
       window.location.href = shareUrlFinal;
+    }
+    
+    // Show success message
+    if (platform === 'twitter') {
+      console.log('🚀 X (Twitter) share opened - ready to go viral!');
+    } else {
+      console.log('💬 Telegram share opened - spreading the word!');
+    }
+  };
+
+  // Save image to device function
+  const handleSaveToDevice = async (nft: PublicNftData) => {
+    try {
+      // Try to download via fetch first (better for CORS)
+      const response = await fetch(nft.imageUrl);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${nft.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'AI-Art'}-AIArtify.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        console.log('📱 Image saved to device successfully');
+      } else {
+        throw new Error('Failed to fetch image');
+      }
+    } catch (error) {
+      // Fallback: direct link download
+      const link = document.createElement('a');
+      link.href = nft.imageUrl;
+      link.download = `${nft.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'AI-Art'}-AIArtify.png`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('📱 Image download initiated (fallback method)');
     }
   };
   return (
@@ -359,10 +432,17 @@ export default function GalleryPage() {
                               Share on Telegram
                             </DropdownMenuItem>
                             <DropdownMenuItem 
-                              onClick={() => setShareNft(nft)}
+                              onClick={() => handleSaveToDevice(nft)}
                               className="cursor-pointer"
                             >
                               <Download className="w-4 h-4 mr-2" />
+                              Save to Device
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => setShareNft(nft)}
+                              className="cursor-pointer"
+                            >
+                              <MoreHorizontal className="w-4 h-4 mr-2" />
                               More Options
                             </DropdownMenuItem>
                           </DropdownMenuContent>

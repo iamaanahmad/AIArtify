@@ -24,69 +24,108 @@ export interface SocialPlatform {
   features: string[];
 }
 
-// Enhanced random caption generator with 20+ unique styles for maximum variety
+// Enhanced random caption generator with creative, viral, and engaging captions
 function getRandomCaption(data: SocialShareData, platform: 'twitter' | 'telegram'): string {
-  const appUrl = 'https://www.ai-artify.xyz'; // Primary custom domain
-  const promptSnippet = data.prompt.length > 50 ? data.prompt.substring(0, 47) + '...' : data.prompt;
+  const appUrl = 'https://ai-artify.xyz'; // Primary domain
+  const promptSnippet = data.prompt.length > 60 ? data.prompt.substring(0, 57) + '...' : data.prompt;
   
-  // 🔥 Powerful & Bold captions (6 variations)
-  const powerfulCaptions = [
-    `🔥 Minted creativity on-chain. This isn't just art — it's permanence.`,
-    `⚡ Where imagination meets the blockchain. Powered by @MetisL2.`,
-    `💎 AI. Provenance. Forever.`,
-    `🚀 Revolutionary 5-node AI consensus validates every pixel of my masterpiece!`,
-    `⚡ AI + Blockchain = Unstoppable Art! Verified by 5 specialized nodes and secured forever.`,
-    `� Breaking boundaries with verified AI art! Every detail analyzed by our AI jury.`
+  // 🔥 Creative / Viral captions (8 variations)
+  const creativeViralCaptions = [
+    `🎨 Just minted my AI masterpiece on #AIArtify ✨ What do you think? 👇`,
+    `💫 Turned my imagination into on-chain art → Minted on #Metis with AIArtify 🚀`,
+    `� From words to NFT in seconds. Meet my latest creation`,
+    `� Proof that AI + imagination = magic`,
+    `🚀 This might be my wildest AI creation yet...`,
+    `✨ When your prompt hits different 🎯`,
+    `🎨 Okay, this AI art came out better than expected 👀`,
+    `💎 Fresh mint alert! What vibe does this give you? 👇`
   ];
   
-  // 🎨 Creative & Artistic captions (6 variations)
-  const creativeCaptions = [
-    `🎨 I whispered a prompt, AIArtify painted a universe.`,
-    `✨ From thought → pixels → NFT. #AIArtify magic ✨`,
-    `🌟 A dream turned into digital permanence.`,
-    `🎭 When AI becomes your creative partner! Born from: "${promptSnippet}"`,
-    `🎨 Art meets AI meets forever! My vision transformed into permanent beauty.`,
-    `✨ Creative magic happening! AI helped birth this masterpiece with 5-node validation.`
+  // 🎨 Artistic / Emotional captions (6 variations)
+  const artisticEmotionalCaptions = [
+    `✨ Every prompt tells a story. Here's mine, now living forever on-chain`,
+    `🔗 Minted art powered by AI + secured by blockchain. Creativity meets provenance!`,
+    `💫 Dreamt it, prompted it, minted it. Immortalized on #Metis`,
+    `🎨 Where art meets blockchain. My vision, now permanent`,
+    `✨ AI helped birth this masterpiece, blockchain made it eternal`,
+    `🔗 Digital art with real provenance. This is the future`
   ];
   
-  // 😎 Casual & Fun captions (4 variations)
-  const casualCaptions = [
-    `😍 Just minted some cool AI art 😍 Check this out!`,
-    `🚀 Hyperion vibes → AI art → NFT drop �`,
-    `👀 Had fun playing with AIArtify — look at this piece 👀`,
-    `🎨 Look what I created! AI + blockchain = permanent art 🎨`
-  ];
-  
-  // 📈 Professional captions (4 variations)
+  // ⚡ Professional / Hackathon captions (6 variations)
   const professionalCaptions = [
-    `📈 Exploring the future of AI art & blockchain with AIArtify.`,
-    `🔗 On-chain provenance + AI creativity = trustable NFTs.`,
-    `💼 Minted my artwork as a permanent digital asset on @MetisL2.`,
-    `🏢 Demonstrating the future of verified AI art with blockchain permanence.`
+    `� Exploring the future of AI + Web3 creativity with AIArtify. Here's my latest NFT →`,
+    `� AI-powered art + on-chain provenance = true digital ownership`,
+    `🎨 Minted with AI, verified with LazAI, secured on Hyperion. Next-gen art is here`,
+    `⚡ Building the future of creative AI on #Metis. Check out this piece`,
+    `🔗 Demonstrating AI + blockchain convergence with permanent art`,
+    `🚀 This is what happens when AI meets decentralized creativity`
   ];
   
-  // Combine all 20 caption styles for maximum variety
-  const allCaptions = [...powerfulCaptions, ...creativeCaptions, ...casualCaptions, ...professionalCaptions];
+  // � Fun / Casual captions (6 variations)
+  const funCasualCaptions = [
+    `✨ I just created this wild AI art... should I list it?`,
+    `🎯 Okay, this might be my favorite prompt yet`,
+    `❤️‍🔥 Not gonna lie, this came out pretty fire`,
+    `✨ When the AI understands the assignment perfectly`,
+    `🌿 Tell me this doesn't look like it belongs in a gallery`,
+    `👇 Made this in seconds. Technology is wild`
+  ];
+  
+  // Combine all caption styles for maximum variety (26 total)
+  const allCaptions = [
+    ...creativeViralCaptions,
+    ...artisticEmotionalCaptions, 
+    ...professionalCaptions,
+    ...funCasualCaptions
+  ];
   
   // Pick random caption
-  let baseCaption = allCaptions[Math.floor(Math.random() * allCaptions.length)];
+  const baseCaption = allCaptions[Math.floor(Math.random() * allCaptions.length)];
   
-  // Add prompt snippet and project link
-  let fullCaption = `${baseCaption}\n\nPrompt: "${promptSnippet}"\n\nTry it: ${appUrl}\n\n#AIArtify @MetisL2 #HyperHack #AIArt`;
-  
-  // Handle X (Twitter) character limit of 280
-  if (platform === 'twitter' && fullCaption.length > 280) {
-    // Optimize for Twitter by shortening components
-    const shorterPrompt = data.prompt.length > 30 ? data.prompt.substring(0, 27) + '...' : data.prompt;
-    fullCaption = `${baseCaption}\n\nPrompt: "${shorterPrompt}"\n\n${appUrl}\n\n#AIArtify @MetisL2 #HyperHack`;
+  // Build platform-specific content
+  if (platform === 'twitter') {
+    // X (Twitter) - Keep under 200 chars for links, optimized for engagement
+    let caption = `${baseCaption}`;
     
-    // Final check and truncate if still too long
-    if (fullCaption.length > 280) {
-      fullCaption = fullCaption.substring(0, 277) + '...';
+    // Add prompt if space allows
+    const promptText = `\n\n🖼️ Prompt: "${promptSnippet}"`;
+    const linkText = `\n\n🔗 Try AIArtify: ${appUrl}`;
+    const hashtagText = `\n\n#AIArtify #AIArt #NFT #MetisHyperion`;
+    
+    // Check if we can fit everything under 280 chars
+    const testLength = caption + promptText + linkText + hashtagText;
+    if (testLength.length <= 280) {
+      return caption + promptText + linkText + hashtagText;
+    } else {
+      // Shorter version without prompt details
+      const shortVersion = caption + linkText + `\n\n#AIArtify #AIArt #NFT`;
+      if (shortVersion.length <= 280) {
+        return shortVersion;
+      } else {
+        // Ultra-short version
+        return caption + `\n\n${appUrl}\n\n#AIArtify #NFT`;
+      }
     }
+  } else {
+    // Telegram - More space, include everything + extras
+    let fullCaption = `${baseCaption}\n\n🖼️ Prompt: "${promptSnippet}"\n\n🔗 Try AIArtify: ${appUrl}`;
+    
+    // Add explorer link if minted
+    if (data.mintTxHash && data.mintTxHash !== 'N/A') {
+      fullCaption += `\n\n🧾 View on Explorer: https://hyperion-testnet-explorer.metisdevops.link/tx/${data.mintTxHash}`;
+    }
+    
+    // Add quality score if available
+    if (data.qualityScore && data.qualityScore > 0) {
+      fullCaption += `\n\n⭐ Quality Score: ${Math.round(data.qualityScore * 100)}%`;
+    }
+    
+    // Add project tags and community invite
+    fullCaption += `\n\n#AIArtify #AIArt #NFT #MetisHyperion #LazAI #Web3Art`;
+    fullCaption += `\n\n💬 Join our community: t.me/aiartify`;
+    
+    return fullCaption;
   }
-  
-  return fullCaption;
 }
 
 export const socialPlatforms: Record<string, SocialPlatform> = {
@@ -151,7 +190,29 @@ export async function shareViaWebAPI(data: SocialShareData) {
 }
 
 export async function generateQRCode(url: string): Promise<string> {
-  return `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(url)}`;
+  // Using QR Server API - a reliable, modern QR code service
+  // Alternative: We could implement client-side QR generation with qrcode library
+  const size = 300;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}&format=png&margin=10`;
+  
+  // Fallback options in order of preference:
+  // 1. QR Server API (most reliable)
+  // 2. QRcode.js client-side generation (if we add the library)
+  // 3. Simple URL sharing (no QR code)
+  
+  try {
+    // Test if the service is available
+    const testResponse = await fetch(qrUrl, { method: 'HEAD' });
+    if (testResponse.ok) {
+      return qrUrl;
+    } else {
+      throw new Error('QR service unavailable');
+    }
+  } catch (error) {
+    console.warn('QR code generation failed, falling back to URL sharing:', error);
+    // Fallback: return a data URL with a simple message
+    return `data:text/plain;charset=utf-8,QR Code unavailable. Share this URL: ${url}`;
+  }
 }
 
 export function generatePreviewMetadata(data: SocialShareData) {

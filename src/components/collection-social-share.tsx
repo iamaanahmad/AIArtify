@@ -34,6 +34,47 @@ export default function CollectionSocialShare({ nft, variant = "default" }: Coll
   const shareTitle = `Check out my AI artwork: "${nft.title}"`;
   const shareDescription = `Created with AIArtify's 5-node consensus system. Prompt: "${nft.prompt.slice(0, 100)}${nft.prompt.length > 100 ? '...' : ''}"`;
 
+  // Generate engaging captions using the same system as social-integration
+  const generateShareCaption = (platform: 'twitter' | 'telegram') => {
+    const promptSnippet = nft.prompt.length > 60 ? nft.prompt.substring(0, 57) + '...' : nft.prompt;
+    
+    // Random engaging captions
+    const captions = [
+      `🎨 Just minted my AI masterpiece ✨ What do you think? 👇`,
+      `💫 Turned my imagination into on-chain art 🚀`,
+      `👀 From words to NFT in seconds. Meet my latest creation`,
+      `✨ Every prompt tells a story. Here's mine, now living forever on-chain`,
+      `🔗 AI-powered art + on-chain provenance = true digital ownership`,
+      `🚀 Exploring the future of AI + Web3 creativity. Here's my latest NFT →`,
+      `👀 I just created this wild AI art... should I list it?`,
+      `🎯 Okay, this might be my favorite prompt yet`
+    ];
+    
+    const baseCaption = captions[Math.floor(Math.random() * captions.length)];
+    
+    if (platform === 'twitter') {
+      // X (Twitter) - optimized for 280 char limit
+      let caption = `${baseCaption}\n\n🖼️ Prompt: "${promptSnippet}"\n\n🔗 Try AIArtify: https://ai-artify.xyz\n\n#AIArtify #AIArt #NFT #MetisHyperion`;
+      
+      if (caption.length > 280) {
+        // Shorter version
+        caption = `${baseCaption}\n\n🔗 https://ai-artify.xyz\n\n#AIArtify #AIArt #NFT`;
+      }
+      return caption;
+    } else {
+      // Telegram - more space available
+      let caption = `${baseCaption}\n\n🖼️ Prompt: "${promptSnippet}"\n\n🔗 Try AIArtify: https://ai-artify.xyz`;
+      
+      // Add explorer link if available
+      if (nft.txHash && nft.txHash !== 'N/A') {
+        caption += `\n\n🧾 View on Explorer: https://hyperion-testnet-explorer.metisdevops.link/tx/${nft.txHash}`;
+      }
+      
+      caption += `\n\n#AIArtify #AIArt #NFT #MetisHyperion #LazAI #Web3Art\n\n💬 Join our community: t.me/aiartify`;
+      return caption;
+    }
+  };
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -56,10 +97,11 @@ export default function CollectionSocialShare({ nft, variant = "default" }: Coll
 
   const shareOnTwitter = () => {
     console.log('Twitter share clicked for NFT:', nft.id);
-    const twitterText = `${shareTitle}\n\n${shareDescription}\n\n#AIArt #NFT #MetisHyperion #LazAI\n\n${shareUrl}`;
+    const twitterText = generateShareCaption('twitter');
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}`;
     
     console.log('Opening Twitter URL:', twitterUrl);
+    console.log('Tweet content:', twitterText);
     
     // Open in new window/tab
     const newWindow = window.open(twitterUrl, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
@@ -71,8 +113,8 @@ export default function CollectionSocialShare({ nft, variant = "default" }: Coll
     }
     
     toast({
-      title: "Sharing on Twitter!",
-      description: "Opening Twitter to share your artwork.",
+      title: "🚀 Sharing on X (Twitter)!",
+      description: "Pre-filled tweet opened. Ready to go viral! 🔥",
       duration: 3000,
     });
     
@@ -82,10 +124,11 @@ export default function CollectionSocialShare({ nft, variant = "default" }: Coll
 
   const shareOnTelegram = () => {
     console.log('Telegram share clicked for NFT:', nft.id);
-    const telegramText = `${shareTitle}\n\n${shareDescription}\n\n${shareUrl}`;
+    const telegramText = generateShareCaption('telegram');
     const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(telegramText)}`;
     
     console.log('Opening Telegram URL:', telegramUrl);
+    console.log('Telegram content:', telegramText);
     
     // Open in new window/tab
     const newWindow = window.open(telegramUrl, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
@@ -97,8 +140,8 @@ export default function CollectionSocialShare({ nft, variant = "default" }: Coll
     }
     
     toast({
-      title: "Sharing on Telegram!",
-      description: "Opening Telegram to share your artwork.",
+      title: "💬 Sharing on Telegram!",
+      description: "Share message prepared with all the details! 📱",
       duration: 3000,
     });
     
