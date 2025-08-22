@@ -1,0 +1,14 @@
+status	0x1 Transaction mined and execution succeed
+transaction hash	0x4daf0acdfb45d9d14b4613347cc6a2b0e3367cd11e9c876417ad23a05eee131f
+block hash	0x32c724663ec986e8188b9be6514139ffbbcd1f29921a4e77981f72ed4c1be0a5
+block number	7264128
+contract address	0x4f51850b73db416efe093730836dedefb9f5a3f6
+from	0x7EDce2A53691a349f7FEB1684110312EFc7B7ddB
+to	AIArtifyVerification.(constructor)
+gas	1601041 gas
+transaction cost	1587276 gas 
+input	0x608...e0033
+decoded input	{}
+decoded output	 - 
+logs	[]
+raw logs	[]

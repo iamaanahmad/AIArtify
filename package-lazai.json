@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "deploy:lazai": "node scripts/deploy-lazai-testnet.js",
+    "verify:lazai": "node scripts/verify-lazai-deployment.js"
+  },
+  "devDependencies": {
+    "ethers": "^6.8.0"
+  }
+}

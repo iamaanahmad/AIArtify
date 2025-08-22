@@ -695,7 +695,7 @@ export default function LazAIOnboarding() {
                         variant="link" 
                         size="sm" 
                         className="h-auto p-0"
-                        onClick={() => window.open('https://hyperion-testnet.metisdevops.link/tx/0xa1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456', '_blank')}
+                        onClick={() => window.open('https://testnet-explorer.lazai.network/tx/0xa1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456', '_blank')}
                       >
                         <code className="text-xs text-blue-600 underline">0xa1b2c3d4...123456</code>
                       </Button>

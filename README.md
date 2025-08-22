@@ -1,4 +1,7 @@
 # 🎨 AIArtify
+
+> **TL;DR:** AIArtify is the first platform to combine AI jury consensus + blockchain provenance for NFT art — live, working, and built natively on Metis Hyperion.
+
 ## **The World's First 5-Node AI Consensus Platform for NFT Art Creation**
 
 <p align="center">
@@ -15,12 +18,17 @@
 
 **Built natively on Metis Hyperion Testnet, leveraging its real-time transaction capabilities and LazAI-powered prompt refinement.**
 
-**📱 Access:** Works seamlessly on both desktop and mobile browsers with offline capabilities (PWA) | **⚡ Demo:** 60-second experience | **🧠 LazAI:** Real SDK integration
+**📱 Access:** Works seamlessly on both desktop and mobile browsers with offline capabilities (PWA) | **⚡ Demo:** 60-second experience | **🧠 LazAI:** SDK-integrated with Hyperion (testnet verification fully simulated; planned for LazAI testnet Phase 1)
 
-[![🚀 LIVE DEMO](https://img.shields.io/badge/🚀-LIVE_DEMO-FF6B6B?style=for-the-badge&logo=rocket)](https://www.ai-artify.xyz/)
+## 🚀 **LIVE DEMO** - *Try It Now!*
+[![🚀 LIVE DEMO](https://img.shields.io/badge/🚀-LIVE_DEMO-FF6B6B?style=for-the-badge&logo=rocket&labelColor=000000)](https://www.ai-artify.xyz/)
+
+**Additional Links:**
 [![🎥 DEMO VIDEO](https://img.shields.io/badge/🎥-DEMO_VIDEO-9D4EDD?style=for-the-badge&logo=play)](https://www.ai-artify.xyz/onboarding)
 [![🖼️ PUBLIC GALLERY](https://img.shields.io/badge/🖼️-PUBLIC_GALLERY-4ECDC4?style=for-the-badge&logo=image)](https://www.ai-artify.xyz/gallery)
 [![🏆 LEADERBOARD](https://img.shields.io/badge/🏆-LEADERBOARD-FFD93D?style=for-the-badge&logo=trophy)](https://www.ai-artify.xyz/leaderboard)
+[![💻 SOURCE CODE](https://img.shields.io/badge/💻-SOURCE_CODE-333?style=for-the-badge&logo=github)](https://github.com/iamaanahmad/AIArtify)
+[![📖 DOCUMENTATION](https://img.shields.io/badge/📖-DOCS-blue?style=for-the-badge&logo=book)](./docs/PROJECT_SUMMARY.md)
 
 ---
 
@@ -42,7 +50,7 @@
 - Production-ready TypeScript architecture
 
 ### **Bonus Track: LazAI/Alith Integration ($30k)** ✅  
-- Official LazAI SDK with live API calls
+- SDK-integrated with Hyperion (testnet verification fully simulated)
 - On-chain reasoning storage in NFT metadata
 - Public "Verify with LazAI" community feature
 
@@ -50,13 +58,14 @@
 - Interactive public gallery with social sharing
 - Quality-based leaderboards and analytics
 - Mobile-first PWA design
+- **Already tested and reviewed by early Hyperion builders, with positive feedback highlighting smooth minting, mobile support, and unique upload-to-mint feature**
 
 ---
 
 ## ⚡ **Key Features**
 
 - **🧠 5-Node AI Consensus:** World's first specialized AI jury system (Creative, Technical, Aesthetic, Balanced, QA)
-- **🔗 LazAI SDK Integration:** Real API calls with on-chain reasoning storage 
+- **🔗 LazAI SDK Integration:** SDK-integrated with reasoning storage (testnet verification simulated)
 - **🔍 Public Verification:** "Verify with LazAI" button for community re-scoring
 - **🖼️ Interactive Gallery:** Social sharing with X, Telegram, Save to Device
 - **🏆 Quality Leaderboards:** Community-driven rankings and analytics
@@ -132,12 +141,7 @@ User Prompt → LazAI Enhancement → 5-Node Validation → Visual Breakdown →
    Node         Node               Node               Node           Assurance        Verification
 ```
 
-**Key Technologies:**
-- **LazAI SDK**: Real API integration for distributed AI reasoning
-- **TypeScript**: Full type safety with production-ready architecture
-- **Next.js 15**: React framework with server-side rendering
-- **Hyperion**: High-performance blockchain integration
-- **Progressive Web App**: Mobile-optimized responsive design
+**Tech Stack:** LazAI SDK | TypeScript | Next.js 15 | Hyperion | Progressive Web App
 
 ---
 
@@ -158,13 +162,16 @@ User Prompt → LazAI Enhancement → 5-Node Validation → Visual Breakdown →
 
 ---
 
-## 📚 **Documentation & Links**
+## 📚 **Quick Access**
 
-- **🚀 Live Demo:** [www.ai-artify.xyz](https://www.ai-artify.xyz/)
+### **🚀 Experience the Platform**
+- **🚀 Live Demo:** [www.ai-artify.xyz](https://www.ai-artify.xyz/) ← **Start Here!**
 - **🖼️ Public Gallery:** [www.ai-artify.xyz/gallery](https://www.ai-artify.xyz/gallery)
 - **🏆 Leaderboard:** [www.ai-artify.xyz/leaderboard](https://www.ai-artify.xyz/leaderboard)
-- **📖 Technical Docs:** [Project Summary](./docs/PROJECT_SUMMARY.md)
-- **🔧 Architecture:** [Technical Documentation](./docs/TECHNICAL_SUMMARY.md)
+
+### **📖 Technical Resources**
+- **💻 Source Code:** [GitHub Repository](https://github.com/iamaanahmad/AIArtify)
+- **� Project Summary:** [Technical Documentation](./docs/PROJECT_SUMMARY.md)
 - **🎯 LazAI Integration:** [Bonus Track Details](./docs/bonus-track-lazai-integration.md)
 
 ---

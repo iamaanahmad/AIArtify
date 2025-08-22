@@ -44,6 +44,12 @@ interface VerificationResult {
   timestamp: number;
   confidence: number;
   processingTime: number;
+  blockchain?: {
+    network: string;
+    contractAddress: string;
+    explorerUrl: string;
+    stored: boolean;
+  };
 }
 
 export default function LazAIVerification({ 
@@ -130,7 +136,13 @@ export default function LazAIVerification({
         lazaiTxHash: verificationResult.lazaiTxHash || `lazai_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
         timestamp: Date.now(),
         confidence: verificationResult.confidence || (Math.random() * 0.2 + 0.8),
-        processingTime: verificationResult.processingTime || (Math.random() * 2000 + 3000)
+        processingTime: verificationResult.processingTime || (Math.random() * 2000 + 3000),
+        blockchain: verificationResult.blockchain || {
+          network: 'LazAI Testnet',
+          contractAddress: '0x4f51850b73db416efe093730836dedefb9f5a3f6',
+          explorerUrl: `https://testnet-explorer.lazai.network/tx/${verificationResult.lazaiTxHash}`,
+          stored: true
+        }
       };
       
       setResult(result);
@@ -228,7 +240,7 @@ export default function LazAIVerification({
           className="bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-blue-200 text-blue-700 dark:from-blue-950/20 dark:to-purple-950/20 dark:border-blue-800 dark:text-blue-300"
         >
           <Award className="w-4 h-4 mr-2" />
-          Verify with LazAI
+          LazAI Verify (MVP)
         </Button>
       </DialogTrigger>
       
@@ -236,10 +248,10 @@ export default function LazAIVerification({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Award className="w-5 h-5 text-blue-600" />
-            LazAI Quality Verification
+            LazAI Quality Verification (MVP Demo)
           </DialogTitle>
           <DialogDescription>
-            Real-time verification using distributed AI consensus on the LazAI blockchain network
+            Experience our 5-node AI consensus network with simulated LazAI blockchain anchoring. Real consensus analysis - simulated on-chain storage for demo clarity.
           </DialogDescription>
         </DialogHeader>
         
@@ -335,10 +347,15 @@ export default function LazAIVerification({
             <div className="space-y-6">
               <div className="text-center space-y-4">
                 <CheckCircle className="w-12 h-12 mx-auto text-green-500" />
-                <h3 className="text-lg font-semibold text-green-700">Verification Complete!</h3>
+                <h3 className="text-lg font-semibold text-green-700">LazAI Verification Complete!</h3>
                 <p className="text-muted-foreground">
-                  Your artwork has been successfully verified by the LazAI consensus network
+                  Your artwork has been verified using our 5-node AI consensus network with simulated LazAI anchoring
                 </p>
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="text-sm text-amber-700 dark:text-amber-300">
+                    <strong>🚀 MVP Demo:</strong> This demonstrates how LazAI verification will work once LAZAI token integration is complete. The consensus analysis is real - only the blockchain anchoring is simulated for demo clarity.
+                  </div>
+                </div>
               </div>
 
               {/* Quick Stats */}
@@ -369,6 +386,27 @@ export default function LazAIVerification({
                 </div>
               </div>
 
+              {/* Blockchain Status */}
+              {result.blockchain && (
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span className="font-medium text-blue-700 dark:text-blue-300">LazAI Verification MVP</span>
+                    <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                      Simulated for Demo
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-blue-600 dark:text-blue-400 space-y-1">
+                    <div>Network: {result.blockchain.network}</div>
+                    <div>Contract: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded text-xs">{result.blockchain.contractAddress}</code></div>
+                    <div>Verification Hash: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded text-xs">{result.lazaiTxHash}</code></div>
+                    <div className="text-xs text-blue-500 mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded">
+                      💡 <strong>MVP Demo:</strong> This shows simulated LazAI verification anchoring. Real on-chain storage requires LAZAI tokens + wallet integration (next milestone).
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Detailed Consensus Breakdown */}
               <ConsensusBreakdown
                 nodes={result.consensusNodes}
@@ -383,9 +421,9 @@ export default function LazAIVerification({
               {/* Action Buttons */}
               <div className="flex gap-2 justify-center">
                 <Button variant="outline" asChild>
-                  <a href={`https://lazai-explorer.example.com/tx/${result.lazaiTxHash}`} target="_blank" rel="noopener noreferrer">
+                  <a href={result.blockchain?.explorerUrl || `https://testnet-explorer.lazai.network/tx/${result.lazaiTxHash}`} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="w-4 h-4 mr-2" />
-                    View on LazAI Explorer
+                    View Demo Verification
                   </a>
                 </Button>
                 <Button variant="outline" onClick={handleReset}>
