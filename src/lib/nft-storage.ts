@@ -4,7 +4,16 @@
  * PRODUCTION FIX: Enhanced with storage monitoring and backup systems
  */
 
-import { storageMonitor } from './storage-monitor';
+// Conditional import to handle SSR
+let storageMonitor: any = null;
+if (typeof window !== 'undefined') {
+  try {
+    const { storageMonitor: sm } = require('./storage-monitor');
+    storageMonitor = sm;
+  } catch (error) {
+    console.warn('Storage monitor not available:', error);
+  }
+}
 
 export interface StoredNftMetadata {
   tokenId: string;
@@ -28,8 +37,10 @@ const STORAGE_KEY = 'aiartify_nfts';
 
 export function storeNftMetadata(metadata: StoredNftMetadata): void {
   try {
-    // PRODUCTION FIX: Create emergency backup before storage operations
-    storageMonitor.createEmergencyBackup(metadata.walletAddress);
+    // PRODUCTION FIX: Create emergency backup before storage operations (if available)
+    if (storageMonitor && typeof window !== 'undefined') {
+      storageMonitor.createEmergencyBackup(metadata.walletAddress);
+    }
     
     const stored = getStoredNfts();
     // Remove any existing NFT with same token ID OR same transaction hash (to handle updates)
@@ -47,14 +58,18 @@ export function storeNftMetadata(metadata: StoredNftMetadata): void {
       nft.walletAddress.toLowerCase() !== metadata.walletAddress.toLowerCase()
     );
     
-    // Check storage usage before proceeding
-    const usage = storageMonitor.getCurrentUsage();
+    // Check storage usage before proceeding (if monitor available)
+    let isNearLimit = false;
+    if (storageMonitor && typeof window !== 'undefined') {
+      const usage = storageMonitor.getCurrentUsage();
+      isNearLimit = usage.isNearLimit;
+    }
     
     // CRITICAL: Keep ALL user NFTs (never delete user's own artworks)
     // Only limit other users' NFTs to prevent storage bloat
     let recentOtherNfts = otherNfts.sort((a, b) => b.mintedAt - a.mintedAt);
     
-    if (usage.isNearLimit) {
+    if (isNearLimit) {
       // More aggressive cleanup when near limit
       recentOtherNfts = recentOtherNfts.slice(0, 50);
       console.warn('⚠️ Storage near limit, reduced other NFTs to 50');
@@ -124,8 +139,8 @@ export function getNftsForWallet(walletAddress: string): StoredNftMetadata[] {
     nft.walletAddress.toLowerCase() === walletAddress.toLowerCase()
   ).sort((a, b) => b.mintedAt - a.mintedAt); // Most recent first
   
-  // PRODUCTION FIX: Check for backup data if user has few NFTs
-  if (userNfts.length < 5) {
+  // PRODUCTION FIX: Check for backup data if user has significantly fewer NFTs than expected
+  if (userNfts.length < 50) { // Increased threshold from 5 to 50 for users with 100+ NFTs
     const backupNfts = recoverFromBackup(walletAddress);
     if (backupNfts.length > userNfts.length) {
       console.log(`🔄 Recovered ${backupNfts.length} NFTs from backup for wallet ${walletAddress}`);
@@ -190,14 +205,20 @@ export function recoverLostNfts(walletAddress: string): void {
     console.log('Current stored NFTs:', currentUserNfts.length);
     
     // If user has fewer than expected NFTs, try recovery from blockchain
-    if (currentUserNfts.length < 10) { // Arbitrary threshold for recovery
+    if (currentUserNfts.length < 50) { // Increased threshold from 10 to 50 for users with 100+ NFTs
       console.log('⚠️ Low NFT count detected, blockchain recovery may be needed');
       console.log('💡 Tip: Refresh the collection page to trigger blockchain recovery');
       
-      // PRODUCTION FIX: Try storage monitor backup recovery
-      const restored = storageMonitor.restoreFromBackup(walletAddress);
-      if (restored) {
-        console.log('✅ Successfully restored from storage monitor backup');
+      // PRODUCTION FIX: Try storage monitor backup recovery (if available)
+      if (storageMonitor && typeof window !== 'undefined') {
+        try {
+          const restored = storageMonitor.restoreFromBackup(walletAddress);
+          if (restored) {
+            console.log('✅ Successfully restored from storage monitor backup');
+          }
+        } catch (error) {
+          console.warn('Storage monitor backup recovery failed:', error);
+        }
       }
     }
     
