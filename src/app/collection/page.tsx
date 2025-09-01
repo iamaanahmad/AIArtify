@@ -313,25 +313,46 @@ function CollectionPageContent() {
       const currentBlock = await provider.getBlockNumber();
       console.log('Current block:', currentBlock);
       
-      // PRODUCTION FIX: Search much further back for user's NFTs (up to 200k blocks)
-      const fromBlock = Math.max(0, currentBlock - 200000); // Increased from 50k to 200k blocks
+      // PRODUCTION FIX: Extended blockchain scanning with chunked queries for 100+ NFTs
+      const fromBlock = Math.max(0, currentBlock - 1000000); // Increased to 1M blocks (covers ~2+ months)
       console.log(`Querying Transfer events from block ${fromBlock} to ${currentBlock}`);
       
-      // Query mint events to this address
-      const mintToUserFilter = contract.filters.Transfer(ethers.ZeroAddress, address, null);
-      const mintToUser = await safeContractCall(() => 
-        contract.queryFilter(mintToUserFilter, fromBlock, currentBlock)
-      );
+      // PRODUCTION FIX: Use chunked queries to avoid RPC limits
+      const chunkSize = 25000; // Reduced chunk size for more thorough scanning
+      const mintEvents: any[] = [];
       
-      console.log('Mint events to user found:', mintToUser?.length || 0);
+      for (let startBlock = fromBlock; startBlock < currentBlock; startBlock += chunkSize) {
+        const endBlock = Math.min(startBlock + chunkSize - 1, currentBlock);
+        console.log(`Scanning chunk: blocks ${startBlock} to ${endBlock}`);
+        
+        try {
+          const mintToUserFilter = contract.filters.Transfer(ethers.ZeroAddress, address, null);
+          const chunkEvents = await safeContractCall(() => 
+            contract.queryFilter(mintToUserFilter, startBlock, endBlock)
+          );
+          
+          if (chunkEvents && chunkEvents.length > 0) {
+            mintEvents.push(...chunkEvents);
+            console.log(`Found ${chunkEvents.length} mint events in chunk ${startBlock}-${endBlock}`);
+          }
+          
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 50));
+        } catch (chunkError) {
+          console.warn(`Failed to scan chunk ${startBlock}-${endBlock}:`, chunkError);
+          // Continue with other chunks
+        }
+      }
+      
+      console.log('Total mint events to user found:', mintEvents.length);
 
-      if (mintToUser && mintToUser.length > 0) {
+      if (mintEvents && mintEvents.length > 0) {
         console.log('=== STEP 3: Processing blockchain NFTs ===');
         
         const blockchainNfts: NftData[] = [];
         
         // Process each mint event
-        for (const event of mintToUser) {
+        for (const event of mintEvents) {
           try {
             const eventLog = event as ethers.EventLog;
             if (!eventLog.args) continue;
