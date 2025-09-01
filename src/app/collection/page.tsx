@@ -104,6 +104,14 @@ function CollectionPageContent() {
     if (process.env.NODE_ENV === 'development') {
       console.log('🔍 Fetching NFTs for:', address);
     }
+    
+    // PRODUCTION DEBUG: Show current storage state
+    const storageStats = getNftCount();
+    console.log('🔍 Current storage state:', storageStats);
+    
+    // PRODUCTION FIX: Trigger recovery for low NFT counts
+    recoverLostNfts(address);
+    
     setIsLoading(true);
     setError(null);
     try {
@@ -111,6 +119,25 @@ function CollectionPageContent() {
       console.log('=== STEP 1: Loading from local storage ===');
       const localNfts = getNftsForWallet(address);
       console.log('Found', localNfts.length, 'locally stored NFTs for wallet');
+      
+      // PRODUCTION ALERT: Show warning if NFT count seems low
+      if (localNfts.length > 0 && localNfts.length < 5) {
+        console.warn('⚠️ LOW NFT COUNT DETECTED - User may have lost NFTs due to storage cleanup');
+        toast({
+          title: "⚠️ Checking for Missing Artworks",
+          description: `Found ${localNfts.length} NFTs locally. Scanning blockchain for recovery...`,
+          variant: "default",
+          duration: 8000
+        });
+      } else if (localNfts.length === 0) {
+        console.warn('⚠️ NO LOCAL NFTs FOUND - Starting full blockchain recovery');
+        toast({
+          title: "🔍 Scanning Blockchain",
+          description: "No local NFTs found. Performing comprehensive blockchain scan...",
+          variant: "default",
+          duration: 10000
+        });
+      }
       
       let localNftData: NftData[] = [];
       
@@ -155,8 +182,8 @@ function CollectionPageContent() {
       const currentBlock = await provider.getBlockNumber();
       console.log('Current block:', currentBlock);
       
-      // Query only recent blocks to avoid range limit issues
-      const fromBlock = Math.max(0, currentBlock - 50000); // Last ~50k blocks
+      // PRODUCTION FIX: Search much further back for user's NFTs (up to 200k blocks)
+      const fromBlock = Math.max(0, currentBlock - 200000); // Increased from 50k to 200k blocks
       console.log(`Querying Transfer events from block ${fromBlock} to ${currentBlock}`);
       
       // Query mint events to this address
@@ -316,6 +343,21 @@ function CollectionPageContent() {
     } else {
       setIsLoading(false); // Not loading if there's no wallet
     }
+    
+    // PRODUCTION FIX: Listen for forced refresh events from recovery tool
+    const handleForceRefresh = (event: CustomEvent) => {
+      const { walletAddress: refreshWallet } = event.detail;
+      if (refreshWallet && refreshWallet.toLowerCase() === displayAddress?.toLowerCase()) {
+        console.log('🔄 Forced refresh triggered by recovery tool');
+        fetchNfts(displayAddress);
+      }
+    };
+    
+    window.addEventListener('force-nft-refresh', handleForceRefresh as EventListener);
+    
+    return () => {
+      window.removeEventListener('force-nft-refresh', handleForceRefresh as EventListener);
+    };
   }, [displayAddress, fetchNfts, isViewingOtherUser]);
   
   // Phase 4: Load collection management data
