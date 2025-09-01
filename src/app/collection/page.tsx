@@ -456,10 +456,66 @@ function CollectionPageContent() {
         // Merge local and blockchain NFTs
         const allNftData = [...localNftData, ...blockchainNfts].reverse(); // Most recent first
         console.log('Final merged NFT count:', allNftData.length);
-        setNfts(allNftData);
+        
+        // PRODUCTION FIX: If still missing significant NFTs, try scanning for specific token IDs
+        if (allNftData.length < 80) { // Increased threshold from 3 to 80 for users with 100+ NFTs
+          console.log(`⚠️ Found ${allNftData.length} NFTs but expecting 100+, attempting extended token ID range scan...`);
+          toast({
+            title: "🔍 Extended Deep Scan",
+            description: `Found ${allNftData.length} NFTs. Scanning for remaining NFTs (targeting 100+)...`,
+            variant: "default",
+            duration: 12000
+          });
+          try {
+            await performTokenIdRangeScan(contract, address, allNftData, blockchainNfts);
+            // Update the final count after range scan
+            const updatedNfts = [...localNftData, ...blockchainNfts].reverse();
+            console.log(`After extended range scan: ${updatedNfts.length} total NFTs`);
+            setNfts(updatedNfts);
+          } catch (rangeScanError) {
+            console.warn('Extended token ID range scan failed:', rangeScanError);
+            setNfts(allNftData);
+          }
+        } else {
+          console.log(`✅ Found ${allNftData.length} NFTs - excellent recovery!`);
+          if (allNftData.length >= 80) {
+            toast({
+              title: "🎉 Excellent NFT Recovery!",
+              description: `Successfully found ${allNftData.length} NFTs in your collection!`,
+              variant: "default",
+              duration: 5000
+            });
+          }
+          setNfts(allNftData);
+        }
       } else {
-        // Only local NFTs available
-        console.log('No blockchain events found, using local NFTs only');
+        // Only local NFTs available - but try one more comprehensive scan
+        console.log('No mint events found, attempting comprehensive token ownership scan');
+        toast({
+          title: "🔍 Comprehensive Scan",
+          description: "No mint events found. Performing comprehensive token ownership scan...",
+          variant: "default",
+          duration: 10000
+        });
+        try {
+          const comprehensiveNfts = await performComprehensiveOwnershipScan(contract, address);
+          if (comprehensiveNfts.length > 0) {
+            const combinedNfts = [...localNftData, ...comprehensiveNfts].reverse();
+            console.log('Comprehensive scan found additional NFTs:', comprehensiveNfts.length);
+            toast({
+              title: "✅ Additional NFTs Found!",
+              description: `Comprehensive scan discovered ${comprehensiveNfts.length} additional NFTs!`,
+              variant: "default"
+            });
+            setNfts(combinedNfts);
+          } else {
+            console.log('No additional NFTs found via comprehensive scan');
+            setNfts(localNftData);
+          }
+        } catch (scanError) {
+          console.warn('Comprehensive ownership scan failed:', scanError);
+          setNfts(localNftData);
+        }
       }
 
     } catch (err) {
