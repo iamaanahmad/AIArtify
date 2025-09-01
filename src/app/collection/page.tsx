@@ -27,6 +27,135 @@ import CollectionSocialShare from "@/components/collection-social-share";
 import NFTRecoveryTool from "@/components/nft-recovery-tool";
 import { useToast } from "@/hooks/use-toast";
 
+// PRODUCTION FIX: Helper function for token ID range scanning
+async function performTokenIdRangeScan(contract: any, address: string, existingNfts: NftData[], blockchainNfts: NftData[]): Promise<void> {
+  console.log('🔍 Starting extended token ID range scan for 100+ NFTs...');
+  
+  // Try checking token IDs 1-300 for ownership (increased from 100)
+  for (let tokenId = 1; tokenId <= 300; tokenId++) {
+    try {
+      // Check if this token exists and who owns it
+      const owner = await safeContractCall(() => contract.ownerOf(tokenId));
+      
+      if (owner && typeof owner === 'string' && owner.toLowerCase() === address.toLowerCase()) {
+        // Check if we already have this NFT
+        const alreadyExists = existingNfts.some(nft => nft.id === tokenId.toString());
+        
+        if (!alreadyExists) {
+          console.log(`✅ Found owned token ID ${tokenId} via range scan`);
+          
+          // Try to get metadata
+          const tokenURI = await safeContractCall(() => contract.tokenURI(tokenId));
+          let metadata: any = null;
+          
+          if (tokenURI && typeof tokenURI === 'string' && tokenURI.startsWith('data:application/json;base64,')) {
+            try {
+              const base64String = tokenURI.split(',')[1];
+              const jsonString = Buffer.from(base64String, 'base64').toString('utf8');
+              metadata = JSON.parse(jsonString);
+            } catch (parseError) {
+              // Use fallback metadata
+            }
+          }
+          
+          const nftData = {
+            id: tokenId.toString(),
+            title: metadata?.name || `NFT #${tokenId}`,
+            prompt: metadata?.attributes?.find((attr: any) => attr.trait_type === "Refined Prompt")?.value || 
+                   metadata?.attributes?.find((attr: any) => attr.trait_type === "Original Prompt")?.value || 
+                   "Range scan discovered NFT",
+            imageUrl: metadata?.image || '/placeholder-nft.svg',
+            txHash: 'Range Scan Discovery',
+          };
+          
+          blockchainNfts.push(nftData);
+        }
+      }
+    } catch (error) {
+      // Token doesn't exist or other error - continue
+      if (tokenId % 50 === 0) {
+        console.log(`Range scan progress: checked up to token ${tokenId}/300`);
+      }
+    }
+    
+    // Small delay every 10 tokens to avoid rate limiting
+    if (tokenId % 10 === 0) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+  }
+}
+
+// PRODUCTION FIX: Comprehensive ownership scan
+async function performComprehensiveOwnershipScan(contract: any, address: string): Promise<NftData[]> {
+  console.log('🔍 Starting comprehensive ownership scan...');
+  const foundNfts: NftData[] = [];
+  
+  try {
+    // Get total supply if possible
+    let totalSupply = 0;
+    try {
+      const supplyResult = await safeContractCall(() => contract.totalSupply());
+      totalSupply = supplyResult ? parseInt(supplyResult.toString()) : 500; // Increased default from 200 to 500
+      console.log('Total supply detected:', totalSupply);
+    } catch (error) {
+      // If totalSupply doesn't exist, try up to 500 tokens (increased from 200)
+      totalSupply = 500;
+      console.log('No totalSupply method, checking first 500 tokens');
+    }
+    
+    // Limit scan to reasonable range but allow for 100+ NFTs
+    const maxToCheck = Math.min(totalSupply, 500); // Increased from 200 to 500
+    
+    for (let tokenId = 1; tokenId <= maxToCheck; tokenId++) {
+      try {
+        const owner = await safeContractCall(() => contract.ownerOf(tokenId));
+        
+        if (owner && typeof owner === 'string' && owner.toLowerCase() === address.toLowerCase()) {
+          console.log(`✅ Comprehensive scan found owned token ${tokenId}`);
+          
+          // Get metadata
+          let metadata: any = null;
+          try {
+            const tokenURI = await safeContractCall(() => contract.tokenURI(tokenId));
+            if (tokenURI && typeof tokenURI === 'string' && tokenURI.startsWith('data:application/json;base64,')) {
+              const base64String = tokenURI.split(',')[1];
+              const jsonString = Buffer.from(base64String, 'base64').toString('utf8');
+              metadata = JSON.parse(jsonString);
+            }
+          } catch (metadataError) {
+            // Continue without metadata
+          }
+          
+          const nftData = {
+            id: tokenId.toString(),
+            title: metadata?.name || `NFT #${tokenId}`,
+            prompt: metadata?.attributes?.find((attr: any) => attr.trait_type === "Refined Prompt")?.value || 
+                   metadata?.attributes?.find((attr: any) => attr.trait_type === "Original Prompt")?.value || 
+                   "Comprehensive scan discovery",
+            imageUrl: metadata?.image || '/placeholder-nft.svg',
+            txHash: 'Comprehensive Scan',
+          };
+          
+          foundNfts.push(nftData);
+        }
+      } catch (error) {
+        // Token doesn't exist or other error - continue
+      }
+      
+      // Progress logging and rate limiting
+      if (tokenId % 25 === 0) {
+        console.log(`Comprehensive scan progress: ${tokenId}/${maxToCheck}`);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    }
+    
+  } catch (error) {
+    console.error('Comprehensive scan error:', error);
+  }
+  
+  return foundNfts;
+}
+
 interface NftMetadata {
   name: string;
   description: string;
