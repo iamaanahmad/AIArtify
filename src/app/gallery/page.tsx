@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { contractConfig } from "@/lib/web3/config";
 import { getRpcProvider, safeContractCall, queryEventsInChunks } from "@/lib/web3/utils";
-import { getStoredNfts } from "@/lib/nft-storage";
+import { getStoredNfts, getNftCount } from "@/lib/nft-storage";
 import { recoverNftMetadataFromTx } from "@/lib/metadata-recovery";
 
 interface NftMetadata {
@@ -50,6 +50,10 @@ export default function GalleryPage() {
       setIsLoading(true);
       setError(null);
       
+      // PRODUCTION DEBUG: Show storage stats
+      const storageStats = getNftCount();
+      console.log('🔍 Gallery storage state:', storageStats);
+      
       try {
         const provider = getRpcProvider();
         const contract = new ethers.Contract(contractConfig.address, contractConfig.abi, provider);
@@ -57,7 +61,7 @@ export default function GalleryPage() {
         console.log('Current block:', currentBlock);
         
         // Query all mint events (from zero address to any address)
-        const fromBlock = Math.max(0, currentBlock - 50000); // Last ~50k blocks should cover all NFTs
+        const fromBlock = Math.max(0, currentBlock - 200000); // Increased from 50k to 200k blocks for better recovery
         console.log(`Querying all mint events from block ${fromBlock} to ${currentBlock}`);
         
         const mintFilter = contract.filters.Transfer(ethers.ZeroAddress, null, null);
