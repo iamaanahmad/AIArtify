@@ -383,22 +383,25 @@ async function cacheNFTData(nftData) {
   }
 }
 
-// Cleanup old cache entries periodically
+// Cleanup old cache entries periodically (less aggressive)
 setInterval(() => {
   caches.open(DYNAMIC_CACHE).then(cache => {
     cache.keys().then(keys => {
-      // Keep only recent entries (last 24 hours)
-      const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+      // Keep entries for 7 days instead of 24 hours to prevent data loss
+      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
       keys.forEach(key => {
         cache.match(key).then(response => {
           const dateHeader = response?.headers.get('date');
-          if (dateHeader && new Date(dateHeader).getTime() < oneDayAgo) {
-            cache.delete(key);
+          if (dateHeader && new Date(dateHeader).getTime() < sevenDaysAgo) {
+            // Only delete non-NFT cached content
+            if (!key.url.includes('nft') && !key.url.includes('image')) {
+              cache.delete(key);
+            }
           }
         });
       });
     });
   });
-}, 60 * 60 * 1000); // Run every hour
+}, 12 * 60 * 60 * 1000); // Run every 12 hours instead of every hour
 
 console.log('[SW] AIArtify Service Worker loaded successfully!');
