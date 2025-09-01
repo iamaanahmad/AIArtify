@@ -16,7 +16,7 @@ import { contractConfig } from "@/lib/web3/config";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Wallet, Grid, List, Filter, Plus, BarChart3, Share2, ExternalLink } from "lucide-react";
 import { getRpcProvider, safeContractCall, queryEventsInChunks, tokenExists, getTokenMetadata } from "@/lib/web3/utils";
-import { getNftsForWallet, getNftByTokenId, storeNftMetadata } from "@/lib/nft-storage";
+import { getNftsForWallet, getNftByTokenId, storeNftMetadata, recoverLostNfts, getNftCount } from "@/lib/nft-storage";
 import { recoverNftMetadataFromTx } from "@/lib/metadata-recovery";
 import { useCollections, collectionTemplates } from "@/lib/collection-manager";
 import { type ArtworkItem, type ArtCollection } from "@/lib/collection-manager";
@@ -24,6 +24,7 @@ import AnalyticsDashboard from "@/components/analytics-dashboard";
 import ConsensusBreakdown from "@/components/consensus-breakdown";
 import LazAIVerification from "@/components/lazai-verification";
 import CollectionSocialShare from "@/components/collection-social-share";
+import NFTRecoveryTool from "@/components/nft-recovery-tool";
 import { useToast } from "@/hooks/use-toast";
 
 interface NftMetadata {
