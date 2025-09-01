@@ -249,23 +249,25 @@ function CollectionPageContent() {
       const localNfts = getNftsForWallet(address);
       console.log('Found', localNfts.length, 'locally stored NFTs for wallet');
       
-      // PRODUCTION ALERT: Show warning if NFT count seems low
-      if (localNfts.length > 0 && localNfts.length < 5) {
+      // PRODUCTION ALERT: Show warning if NFT count seems low for users with 100+ NFTs
+      if (localNfts.length > 0 && localNfts.length < 50) { // Increased threshold from 5 to 50
         console.warn('⚠️ LOW NFT COUNT DETECTED - User may have lost NFTs due to storage cleanup');
         toast({
           title: "⚠️ Checking for Missing Artworks",
-          description: `Found ${localNfts.length} NFTs locally. Scanning blockchain for recovery...`,
+          description: `Found ${localNfts.length} NFTs locally. Scanning blockchain for comprehensive recovery...`,
           variant: "default",
           duration: 8000
         });
       } else if (localNfts.length === 0) {
         console.warn('⚠️ NO LOCAL NFTs FOUND - Starting full blockchain recovery');
         toast({
-          title: "🔍 Scanning Blockchain",
-          description: "No local NFTs found. Performing comprehensive blockchain scan...",
+          title: "🔍 Comprehensive Blockchain Scan",
+          description: "No local NFTs found. Performing comprehensive blockchain scan for 100+ NFTs...",
           variant: "default",
           duration: 10000
         });
+      } else if (localNfts.length >= 50) {
+        console.log(`✅ Good local NFT count: ${localNfts.length} found`);
       }
       
       let localNftData: NftData[] = [];
@@ -478,7 +480,9 @@ function CollectionPageContent() {
       const { walletAddress: refreshWallet } = event.detail;
       if (refreshWallet && refreshWallet.toLowerCase() === displayAddress?.toLowerCase()) {
         console.log('🔄 Forced refresh triggered by recovery tool');
-        fetchNfts(displayAddress);
+        if (displayAddress) {
+          fetchNfts(displayAddress);
+        }
       }
     };
     
