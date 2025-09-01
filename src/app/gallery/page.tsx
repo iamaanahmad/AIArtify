@@ -60,18 +60,40 @@ export default function GalleryPage() {
         const currentBlock = await provider.getBlockNumber();
         console.log('Current block:', currentBlock);
         
-        // Query all mint events (from zero address to any address)
-        const fromBlock = Math.max(0, currentBlock - 200000); // Increased from 50k to 200k blocks for better recovery
+        // Query all mint events (from zero address to any address) with enhanced scanning for 100+ NFTs
+        const fromBlock = Math.max(0, currentBlock - 1000000); // Increased to 1M blocks for comprehensive coverage
         console.log(`Querying all mint events from block ${fromBlock} to ${currentBlock}`);
         
-        const mintFilter = contract.filters.Transfer(ethers.ZeroAddress, null, null);
-        const allMints = await safeContractCall(() => 
-          contract.queryFilter(mintFilter, fromBlock, currentBlock)
-        );
+        // PRODUCTION FIX: Use smaller chunks for more thorough scanning
+        const chunkSize = 25000; // Reduced from 50k to 25k for better coverage
+        const allMintEvents: any[] = [];
         
-        console.log('Total mint events found:', allMints?.length || 0);
+        for (let startBlock = fromBlock; startBlock < currentBlock; startBlock += chunkSize) {
+          const endBlock = Math.min(startBlock + chunkSize - 1, currentBlock);
+          console.log(`Gallery scanning chunk: blocks ${startBlock} to ${endBlock}`);
+          
+          try {
+            const mintFilter = contract.filters.Transfer(ethers.ZeroAddress, null, null);
+            const chunkEvents = await safeContractCall(() => 
+              contract.queryFilter(mintFilter, startBlock, endBlock)
+            );
+            
+            if (chunkEvents && chunkEvents.length > 0) {
+              allMintEvents.push(...chunkEvents);
+              console.log(`Gallery found ${chunkEvents.length} mint events in chunk ${startBlock}-${endBlock}`);
+            }
+            
+            // Reduced delay for faster scanning
+            await new Promise(resolve => setTimeout(resolve, 75));
+          } catch (chunkError) {
+            console.warn(`Gallery failed to scan chunk ${startBlock}-${endBlock}:`, chunkError);
+            // Continue with other chunks
+          }
+        }
         
-        if (!allMints || allMints.length === 0) {
+        console.log('Gallery total mint events found:', allMintEvents.length);
+        
+        if (!allMintEvents || allMintEvents.length === 0) {
           console.log('No mint events found on blockchain, falling back to local storage only');
           // Fallback to local storage NFTs only
           const localNfts = getStoredNfts();
@@ -95,9 +117,9 @@ export default function GalleryPage() {
         console.log('Local NFTs available:', localNfts.length);
 
         console.log('=== STEP 3: Processing mint events for public gallery ===');
-        const publicNftPromises = allMints.map(async (event, index): Promise<PublicNftData | null> => {
+        const publicNftPromises = allMintEvents.map(async (event: any, index: number): Promise<PublicNftData | null> => {
           try {
-            console.log(`Processing mint event ${index + 1}/${allMints.length}`);
+            console.log(`Processing mint event ${index + 1}/${allMintEvents.length}`);
             
             const eventLog = event as ethers.EventLog;
             if (!eventLog.args) return null;
@@ -211,7 +233,7 @@ export default function GalleryPage() {
         });
 
         const results = await Promise.all(publicNftPromises);
-        const validNfts = results.filter((nft): nft is PublicNftData => nft !== null).reverse(); // Show newest first
+        const validNfts = results.filter((nft: PublicNftData | null): nft is PublicNftData => nft !== null).reverse(); // Show newest first
         
         console.log('=== GALLERY RESULT ===');
         console.log('Total public NFTs:', validNfts.length);
